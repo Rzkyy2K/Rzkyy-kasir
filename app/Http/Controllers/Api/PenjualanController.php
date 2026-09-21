@@ -14,8 +14,13 @@ class PenjualanController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Penjualan::with(['sekolah', 'kasir', 'pelanggan'])
-            ->where('is_delete', 0);
+        $query = Penjualan::with(['sekolah', 'kasir', 'pelanggan', 'voidRequester', 'voidApprover']);
+
+        if ($request->filled('status_void')) {
+            $query->where('status_void', $request->string('status_void')->toString());
+        } else {
+            $query->where('is_delete', 0);
+        }
 
         if ($request->filled('id_sekolah')) {
             $query->where('id_sekolah', $request->integer('id_sekolah'));
@@ -35,10 +40,191 @@ class PenjualanController extends BaseApiController
 
     public function show(int $id): JsonResponse
     {
-        $penjualan = Penjualan::with(['sekolah', 'kasir', 'pelanggan', 'detail.barang'])
-            ->where('is_delete', 0)->find($id);
+        $penjualan = Penjualan::with([
+            'sekolah',
+            'kasir',
+            'pelanggan',
+            'detail.barang',
+            'voidRequester',
+            'adminVerifier',
+            'voidApprover',
+        ])->find($id);
 
         return $penjualan ? $this->ok($penjualan) : $this->fail('Transaksi tidak ditemukan.', 404);
+    }
+
+    public function pendingVoidRequests(Request $request): JsonResponse
+    {
+        $query = Penjualan::with([
+            'sekolah',
+            'kasir',
+            'pelanggan',
+            'voidRequester',
+            'adminVerifier',
+            'voidApprover',
+            'detail.barang',
+        ]);
+
+        if ($request->filled('tier')) {
+            $tier = $request->string('tier')->toString();
+            if ($tier === 'admin') {
+                $query->whereIn('status_void', ['pending_admin', 'pending']);
+            } elseif ($tier === 'super_admin') {
+                $query->where('status_void', 'pending_super_admin');
+            }
+        } else {
+            $query->whereIn('status_void', ['pending_admin', 'pending_super_admin', 'pending']);
+        }
+
+        if ($request->filled('id_sekolah')) {
+            $query->where('id_sekolah', $request->integer('id_sekolah'));
+        }
+
+        return $this->ok($query->orderByDesc('void_requested_at')->get());
+    }
+
+    public function requestVoid(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'id_user' => 'required|integer|exists:tb_user,id_user',
+            'alasan' => 'required|string|max:500',
+            'telepon_kasir' => 'nullable|string|max:30',
+        ]);
+
+        $penjualan = Penjualan::find($id);
+        if (! $penjualan) {
+            return $this->fail('Transaksi tidak ditemukan.', 404);
+        }
+
+        if ($penjualan->status_void === 'approved' || ($penjualan->is_delete && ! in_array($penjualan->status_void, ['pending', 'pending_admin', 'pending_super_admin']))) {
+            return $this->fail('Transaksi sudah dibatalkan sebelumnya.', 422);
+        }
+
+        if (in_array($penjualan->status_void, ['pending_admin', 'pending_super_admin', 'pending'])) {
+            return $this->fail('Transaksi ini sedang dalam proses antrean persetujuan pembatalan.', 422);
+        }
+
+        $penjualan->update([
+            'status_void' => 'pending_admin',
+            'alasan_void' => $data['alasan'],
+            'void_telepon_kasir' => $data['telepon_kasir'] ?? null,
+            'void_requested_by' => $data['id_user'],
+            'void_requested_at' => now(),
+            'void_admin_verified_by' => null,
+            'void_admin_verified_at' => null,
+            'void_admin_notes' => null,
+            'void_reject_reason' => null,
+        ]);
+
+        return $this->ok(
+            $penjualan->load(['kasir', 'pelanggan', 'voidRequester']),
+            'Permintaan pembatalan transaksi berhasil diajukan. Menunggu cross-check Admin via WhatsApp.'
+        );
+    }
+
+    public function forwardVoid(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'id_user' => 'required|integer|exists:tb_user,id_user',
+            'catatan_admin' => 'required|string|max:500',
+        ]);
+
+        $penjualan = Penjualan::find($id);
+        if (! $penjualan) {
+            return $this->fail('Transaksi tidak ditemukan.', 404);
+        }
+
+        if (! in_array($penjualan->status_void, ['pending_admin', 'pending'])) {
+            return $this->fail('Hanya transaksi menunggu verifikasi Admin yang dapat diteruskan ke Super Admin.', 422);
+        }
+
+        $penjualan->update([
+            'status_void' => 'pending_super_admin',
+            'void_admin_verified_by' => $data['id_user'],
+            'void_admin_verified_at' => now(),
+            'void_admin_notes' => $data['catatan_admin'],
+        ]);
+
+        return $this->ok(
+            $penjualan->fresh()->load(['kasir', 'pelanggan', 'voidRequester', 'adminVerifier']),
+            'Hasil cross-check berhasil dicatat. Pengajuan diteruskan ke Super Admin untuk persetujuan akhir.'
+        );
+    }
+
+    public function approveVoid(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'id_user' => 'required|integer|exists:tb_user,id_user',
+        ]);
+
+        $penjualan = Penjualan::with('detail.barang')->find($id);
+        if (! $penjualan) {
+            return $this->fail('Transaksi tidak ditemukan.', 404);
+        }
+
+        if ($penjualan->status_void === 'approved') {
+            return $this->fail('Transaksi sudah disetujui dibatalkan sebelumnya.', 422);
+        }
+
+        try {
+            DB::transaction(function () use ($penjualan, $data) {
+                // 1. Kembalikan stok barang yang terjual
+                foreach ($penjualan->detail as $item) {
+                    if ($item->barang) {
+                        $item->barang->increment('stok', $item->jumlah_barang);
+                    }
+                }
+
+                // 2. Perbarui status transaksi menjadi dibatalkan / void
+                $penjualan->update([
+                    'status_void' => 'approved',
+                    'status_pembayaran' => 'dibatalkan',
+                    'is_delete' => 1,
+                    'deleted_at' => now(),
+                    'deleted_by' => $data['id_user'],
+                    'void_approved_by' => $data['id_user'],
+                    'void_approved_at' => now(),
+                ]);
+            });
+
+            return $this->ok(
+                $penjualan->fresh()->load(['kasir', 'pelanggan', 'voidRequester', 'adminVerifier', 'voidApprover']),
+                'Pembatalan transaksi disetujui secara final oleh Super Admin. Stok barang berhasil dikembalikan.'
+            );
+        } catch (Throwable $e) {
+            report($e);
+
+            return $this->fail('Gagal memproses persetujuan void: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function rejectVoid(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'id_user' => 'required|integer|exists:tb_user,id_user',
+            'alasan_penolakan' => 'nullable|string|max:500',
+        ]);
+
+        $penjualan = Penjualan::find($id);
+        if (! $penjualan) {
+            return $this->fail('Transaksi tidak ditemukan.', 404);
+        }
+
+        if (! in_array($penjualan->status_void, ['pending_admin', 'pending_super_admin', 'pending'])) {
+            return $this->fail('Hanya transaksi dalam antrean pending yang dapat ditolak.', 422);
+        }
+
+        $penjualan->update([
+            'status_void' => 'rejected',
+            'void_reject_reason' => $data['alasan_penolakan'] ?? 'Permintaan dibatalkan/ditolak.',
+            'void_approved_by' => $data['id_user'],
+            'void_approved_at' => now(),
+        ]);
+
+        return $this->ok(
+            $penjualan->fresh()->load(['kasir', 'pelanggan', 'voidRequester', 'adminVerifier', 'voidApprover']),
+            'Permintaan pembatalan transaksi telah ditolak. Transaksi tetap aktif.'
+        );
     }
 
     public function store(Request $request): JsonResponse

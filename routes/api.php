@@ -25,6 +25,9 @@ Route::put('user/{id}', [MasterController::class, 'updateUser']);
 Route::delete('user/{id}', [MasterController::class, 'destroyUser']);
 
 Route::get('barang', [BarangController::class, 'index']);
+Route::get('barang/prediksi-stok', [BarangController::class, 'prediksiStok']);
+Route::get('barang/barcode/{barcode}', [BarangController::class, 'byBarcode']);
+Route::get('barcode-lookup/{barcode}', [BarangController::class, 'lookupBarcode']);
 Route::post('barang', [BarangController::class, 'store']);
 Route::get('barang/{id}', [BarangController::class, 'show']);
 Route::put('barang/{id}', [BarangController::class, 'update']);
@@ -54,9 +57,14 @@ Route::post('pelanggan', [PelangganController::class, 'store']);
 Route::put('pelanggan/{id}', [PelangganController::class, 'update']);
 Route::delete('pelanggan/{id}', [PelangganController::class, 'destroy']);
 
+Route::get('penjualan/void-requests', [PenjualanController::class, 'pendingVoidRequests']);
 Route::get('penjualan', [PenjualanController::class, 'index']);
 Route::post('penjualan', [PenjualanController::class, 'store']);
 Route::get('penjualan/{id}', [PenjualanController::class, 'show']);
+Route::post('penjualan/{id}/request-void', [PenjualanController::class, 'requestVoid']);
+Route::post('penjualan/{id}/forward-void', [PenjualanController::class, 'forwardVoid']);
+Route::post('penjualan/{id}/approve-void', [PenjualanController::class, 'approveVoid']);
+Route::post('penjualan/{id}/reject-void', [PenjualanController::class, 'rejectVoid']);
 
 Route::get('pembelian', [PembelianController::class, 'index']);
 Route::post('pembelian', [PembelianController::class, 'store']);

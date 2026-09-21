@@ -1,5 +1,5 @@
 import api from './api';
-import type { ApiResponse, Barang, Paginated } from '@/types/pos';
+import type { ApiResponse, Barang, Paginated, PrediksiStokData } from '@/types/pos';
 
 export interface BarangQuery {
     id_sekolah?: number;
@@ -59,3 +59,51 @@ export async function adjustStock(
     );
     return data;
 }
+
+export async function fetchBarangByBarcode(barcode: string, idSekolah?: number) {
+    const { data } = await api.get<ApiResponse<Barang>>(
+        `/barang/barcode/${encodeURIComponent(barcode)}`,
+        { params: { id_sekolah: idSekolah } },
+    );
+    return data.data;
+}
+
+export interface BarcodeLookupResult {
+    found: boolean;
+    source: 'local' | 'edumart_catalog' | 'openfoodfacts' | null;
+    nama?: string;
+    barcode?: string;
+    brand?: string;
+    harga_beli?: number;
+    harga_jual?: number;
+    satuan?: string;
+    id_kategori?: number;
+    id_kelompok_kategori?: number;
+    id_supplier?: number;
+    stok?: number;
+    barang?: Barang;
+}
+
+export async function lookupBarcode(barcode: string, idSekolah?: number) {
+    const { data } = await api.get<ApiResponse<BarcodeLookupResult>>(
+        `/barcode-lookup/${encodeURIComponent(barcode)}`,
+        { params: { id_sekolah: idSekolah } },
+    );
+    return data;
+}
+
+export interface PrediksiStokQuery {
+    id_sekolah?: number;
+    days?: number;
+    status?: 'kritis' | 'waspada' | 'aman' | 'all' | string;
+    search?: string;
+}
+
+export async function fetchPrediksiStok(params: PrediksiStokQuery = {}) {
+    const { data } = await api.get<ApiResponse<PrediksiStokData>>(
+        '/barang/prediksi-stok',
+        { params },
+    );
+    return data.data;
+}
+

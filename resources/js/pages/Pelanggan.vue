@@ -54,7 +54,7 @@ async function load() {
         lastPage.value = res.last_page;
         total.value = res.total;
     } catch (e) {
-        toast.error(friendlyError(e, 'Daftar pelanggan gagal dimuat.'));
+        toast.error(friendlyError(e, 'Gagal memuat daftar pelanggan.'));
     } finally {
         loading.value = false;
     }
@@ -107,7 +107,7 @@ async function simpan() {
         await load();
     } catch (e) {
         toast.error(
-            friendlyError(e, 'Pelanggan gagal disimpan. Silakan coba lagi.'),
+            friendlyError(e, 'Gagal menyimpan data pelanggan. Silakan coba kembali.'),
         );
     } finally {
         saving.value = false;
@@ -115,13 +115,13 @@ async function simpan() {
 }
 
 async function hapus(p: Pelanggan) {
-    if (!confirm(`Hapus permanen pelanggan "${p.nama_pelanggan}"?`)) return;
+    if (!confirm(`Hapus data pelanggan "${p.nama_pelanggan}"? Data yang dihapus tidak dapat dipulihkan.`)) return;
     try {
         const res = await deletePelanggan(p.id_pelanggan);
-        toast.success(res.message ?? 'Pelanggan berhasil dihapus.');
+        toast.success(res.message ?? 'Data pelanggan berhasil dihapus.');
         await load();
     } catch (e) {
-        toast.error(friendlyError(e, 'Pelanggan gagal dihapus.'));
+        toast.error(friendlyError(e, 'Gagal menghapus data pelanggan.'));
     }
 }
 
@@ -144,22 +144,22 @@ onMounted(() => {
         <PageHeader
             title="Pelanggan"
             :icon="Users"
-            subtitle="Data pembeli / siswa"
+            subtitle="Database pelanggan, data siswa, dan kelompok pembeli"
         >
             <template #actions>
                 <button
                     type="button"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambah"
                 >
-                    <Plus class="h-4 w-4" /> Tambah Pelanggan
+                    <Plus class="h-4 w-4" /> Tambah Pelanggan Baru
                 </button>
             </template>
         </PageHeader>
 
         <SearchBar
             v-model="search"
-            placeholder="Cari nama / telepon…"
+            placeholder="Cari nama atau nomor telepon pelanggan…"
             @update:model-value="onSearch"
         />
 
@@ -167,29 +167,30 @@ onMounted(() => {
             <div
                 v-for="i in 4"
                 :key="i"
-                class="h-16 animate-pulse rounded-xl bg-white"
+                class="h-16 animate-pulse rounded-xl bg-white dark:bg-slate-900"
             />
         </div>
         <EmptyState
             v-else-if="rows.length === 0"
             class="mt-4"
-            title="Belum ada pelanggan"
+            title="Belum Ada Data Pelanggan"
+            message="Belum ada data pelanggan atau siswa yang terdaftar. Klik tombol Tambah Pelanggan Baru untuk memulai."
         />
         <div v-else class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div
                 v-for="p in rows"
                 :key="p.id_pelanggan"
-                class="rounded-2xl border border-slate-200 bg-white p-4"
+                class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900"
             >
                 <div class="flex items-start justify-between gap-1.5">
                     <div>
-                        <p class="font-bold text-slate-800">
+                        <p class="font-bold text-slate-800 dark:text-slate-100">
                             {{ p.nama_pelanggan }}
                         </p>
-                        <p class="text-sm text-slate-500">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
                             {{ p.telepon ?? '—' }}
                         </p>
-                        <p class="mt-1 text-xs text-slate-400">
+                        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
                             {{ p.kelompok?.nama_kelompok ?? '' }}
                             {{ p.alamat ?? '' }}
                         </p>
@@ -197,14 +198,16 @@ onMounted(() => {
                     <div class="flex gap-1">
                         <button
                             type="button"
-                            class="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700"
+                            title="Edit Pelanggan"
+                            class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-blue-400 transition"
                             @click="bukaEdit(p)"
                         >
                             <Pencil class="h-4 w-4" />
                         </button>
                         <button
                             type="button"
-                            class="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            title="Hapus Pelanggan"
+                            class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-red-400 transition"
                             @click="hapus(p)"
                         >
                             <Trash2 class="h-4 w-4" />
@@ -227,32 +230,34 @@ onMounted(() => {
 
         <Modal
             :open="showForm"
-            :title="editing ? 'Edit Pelanggan' : 'Tambah Pelanggan'"
+            :title="editing ? 'Edit Data Pelanggan' : 'Tambah Pelanggan Baru'"
             @close="showForm = false"
         >
-            <form class="space-y-2.5" @submit.prevent="simpan">
-                <label class="text-xs font-medium text-slate-600"
-                    >Nama pelanggan*
+            <form class="space-y-3" @submit.prevent="simpan">
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                    >Nama Lengkap Pelanggan / Siswa*
                     <input
                         v-model="form.nama_pelanggan"
                         required
-                        class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="Contoh: Budi Santoso / Siswa X RPL 1"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                 </label>
-                <label class="text-xs font-medium text-slate-600"
-                    >Telepon
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                    >Nomor Telepon / WhatsApp
                     <input
                         v-model="form.telepon"
-                        class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="Contoh: 081234567890"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                 </label>
-                <label class="text-xs font-medium text-slate-600"
-                    >Kelompok
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                    >Kelompok Pelanggan
                     <select
                         v-model="form.id_kelompok_pelanggan"
-                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     >
-                        <option :value="null">— Umum —</option>
+                        <option :value="null">— Umum (Reguler) —</option>
                         <option
                             v-for="k in kelompok"
                             :key="k.id_kelompok_pelanggan"
@@ -262,20 +267,21 @@ onMounted(() => {
                         </option>
                     </select>
                 </label>
-                <label class="text-xs font-medium text-slate-600"
-                    >Alamat
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                    >Alamat / Keterangan Kelas
                     <textarea
                         v-model="form.alamat"
                         rows="2"
-                        class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="Contoh: Kelas XII RPL 2 / Jl. Mawar No. 12"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                 </label>
                 <button
                     type="submit"
                     :disabled="saving"
-                    class="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                    class="w-full cursor-pointer rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition disabled:opacity-60 shadow-xs"
                 >
-                    Simpan
+                    {{ saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : 'Simpan Data Pelanggan' }}
                 </button>
             </form>
         </Modal>

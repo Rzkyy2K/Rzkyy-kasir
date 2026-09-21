@@ -3,11 +3,16 @@ import { Head, Link } from '@inertiajs/vue3';
 import {
     ArrowRight,
     BarChart3,
+    Bell,
     Boxes,
     CheckCircle2,
     Clock,
     Layers,
+    MessageCircle,
+    MonitorSmartphone,
+    ScanBarcode,
     School,
+    ShieldAlert,
     ShieldCheck,
     ShoppingBag,
     ShoppingCart,
@@ -15,6 +20,7 @@ import {
     Store,
     Tags,
     Truck,
+    UserPlus,
     Users,
 } from '@lucide/vue';
 import { onMounted, onUnmounted, ref } from 'vue';
@@ -23,6 +29,76 @@ const activeFeatureTab = ref<string>('all');
 
 const features = [
     {
+        id: 'barcode',
+        category: 'transaksi',
+        isUnggulan: true,
+        title: 'Pindai Barcode Cepat (Kasir & Produk)',
+        icon: ScanBarcode,
+        badge: '⭐ Fitur Unggulan',
+        desc: 'Pemindaian barcode terintegrasi penuh: pemindaian kilat otomatis saat transaksi checkout kasir dan input barcode di master data produk untuk mencegah salah item.',
+        highlights: [
+            'Pindai barcode kilat di halaman kasir',
+            'Input & pencarian barcode di data produk',
+            'Mendukung scanner fisik & kamera digital',
+        ],
+    },
+    {
+        id: 'void',
+        category: 'transaksi',
+        isUnggulan: true,
+        title: 'Pembatalan Transaksi 2 Tingkat (Void)',
+        icon: ShieldAlert,
+        badge: '⭐ Fitur Unggulan',
+        desc: 'Sistem pembatalan transaksi berjenjang anti-manipulasi: Kasir meminta void dengan nomor WA, Admin verifikasi cross-check via WhatsApp ke kasir, dan Super Admin memberi keputusan final.',
+        highlights: [
+            'Cross-check keabsahan kasir via WhatsApp',
+            'Pemisahan wewenang Admin & Super Admin',
+            'Auto-restore stok & pembatalan riwayat akuntabel',
+        ],
+    },
+    {
+        id: 'smart-restock',
+        category: 'inventaris',
+        isUnggulan: true,
+        title: 'Prediksi Stok Habis (Smart Restock Alert)',
+        icon: Sparkles,
+        badge: '⭐ Fitur Unggulan',
+        desc: 'Sistem deteksi dini cerdas yang menganalisis kecepatan penjualan harian (velocity burn rate) untuk memproyeksikan sisa hari sebelum produk habis serta menghitung otomatis saran belanja kuantiti 14 hari buffer (khusus Admin & Super Admin).',
+        highlights: [
+            'Deteksi dini status Kritis (≤ 2 hari) & Waspada (3–5 hari)',
+            'Kalkulasi otomatis kebutuhan belanja buffer 14 hari & modal anggaran',
+            'Tombol pintas restock langsung ke Form Pembelian Supplier',
+        ],
+    },
+    {
+        id: 'responsif',
+        category: 'analitik',
+        isUnggulan: true,
+        title: 'Desain Website Responsif & Fleksibel',
+        icon: MonitorSmartphone,
+        badge: '⭐ Fitur Unggulan',
+        desc: 'Antarmuka POS modern yang otomatis menyesuaikan tata letak dengan mulus di berbagai perangkat—dari smartphone kasir, tablet sentuh, hingga monitor desktop PC.',
+        highlights: [
+            'Tampilan adaptif smartphone, tablet & PC',
+            'Navigasi bawah (bottom nav) di smartphone',
+            'Layout kasir sentuh yang ergonomis & cepat',
+        ],
+    },
+    {
+        id: 'users',
+        category: 'keamanan',
+        isUnggulan: true,
+        title: 'Manajemen Pengguna (Super Admin)',
+        icon: UserPlus,
+        badge: '⭐ Fitur Unggulan',
+        desc: 'Hak akses eksklusif bagi Super Admin untuk menambah pengguna baru (Kasir, Admin Koperasi, maupun Super Admin) lengkap dengan pembatasan hak akses dan isolasi data per sekolah.',
+        highlights: [
+            'Kelola akun pengguna untuk peran kasir, admin, dan super admin',
+            'Pengaturan hak akses ketat per pengguna',
+            'Isolasi akun data aman antar sekolah',
+        ],
+    },
+    {
         id: 'kasir',
         category: 'transaksi',
         title: 'Kasir POS & Struk Cepat',
@@ -30,20 +106,33 @@ const features = [
         badge: 'Inti Kasir',
         desc: 'Proses pembayaran instan dengan kalkulasi kembalian otomatis, filter kategori responsif, dan cetak struk nota belanja langsung ke printer thermal.',
         highlights: [
-            'Pencarian kilat & scan barcode',
+            'Pencarian kilat & pemindaian barcode',
             'Kalkulasi kembalian otomatis',
             'Cetak struk nota belanja siap pakai',
         ],
     },
     {
+        id: 'notifikasi',
+        category: 'analitik',
+        title: 'Pusat Notifikasi Cerdas',
+        icon: Bell,
+        badge: 'Real-time Header',
+        desc: 'Ikon lonceng global di header aplikasi dengan indikator badge prioritas multi-peran (Admin & Super Admin), tombol pintas Chat WA Kasir langsung, dan deteksi stok menipis.',
+        highlights: [
+            'Badge lonceng prioritas reaktif per peran',
+            'Akses cepat WhatsApp untuk koordinasi kasir',
+            'Sinkronisasi realtime tanpa reload halaman',
+        ],
+    },
+    {
         id: 'produk',
         category: 'katalog',
-        title: 'Manajemen Produk & Barcode',
+        title: 'Manajemen Produk & Master Data',
         icon: ShoppingBag,
         badge: 'Master Data',
         desc: 'Kelola seluruh katalog alat tulis, buku, seragam, hingga makanan & minuman dengan kode barcode unik, satuan harga beli, dan harga jual.',
         highlights: [
-            'Dukungan barcode scanner fisik',
+            'Dukungan pemindai barcode fisik & kamera',
             'Harga beli (HPP) & harga jual',
             'Status aktif/non-aktif produk',
         ],
@@ -90,7 +179,7 @@ const features = [
     {
         id: 'supplier',
         category: 'pengadaan',
-        title: 'Manajemen Mitra Supplier',
+        title: 'Manajemen Mitra Pemasok (Supplier)',
         icon: Store,
         badge: 'Kemitraan',
         desc: 'Database rekanan penyedia kebutuhan sekolah per sekolah, lengkap dengan kontak, alamat, serta riwayat pasokan barang dagangan.',
@@ -119,10 +208,10 @@ const features = [
         title: 'Laporan & Rekapitulasi Analitik',
         icon: BarChart3,
         badge: 'Akuntansi',
-        desc: 'Rekapitulasi penjualan, omset bruto, barang terlaris (top product), serta mutasi pembelian dengan rentang tanggal fleksibel dan export CSV instan.',
+        desc: 'Rekapitulasi penjualan, omzet penjualan, produk terlaris (top product), serta mutasi pembelian dengan rentang tanggal fleksibel dan ekspor CSV instan.',
         highlights: [
             'Rekap penjualan, pembelian & stok',
-            'Ranking produk paling laris',
+            'Peringkat produk paling laris',
             'Ekspor laporan dalam format CSV',
         ],
     },
@@ -135,36 +224,40 @@ const features = [
         desc: 'Satu platform dapat melayani beberapa koperasi sekolah (SMKN 1–4 Tasikmalaya) dengan data yang saling terisolasi aman berdasarkan id_sekolah.',
         highlights: [
             'Katalog produk mandiri per institusi',
-            'Pemisahan omset & kas tiap sekolah',
+            'Pemisahan omzet & kas tiap sekolah',
             'Pengaturan terpusat bagi super admin',
         ],
     },
     {
         id: 'keamanan',
         category: 'keamanan',
-        title: 'Role Akses & Audit Pengguna',
+        title: 'Hak Akses Peran & Audit Pengguna',
         icon: ShieldCheck,
         badge: 'Anti-Kecurangan',
         desc: 'Tingkatan hak akses ketat (Kasir, Admin Koperasi, Super Admin) untuk melindungi data sensitif harga modal dan mencegah manipulasi stok.',
         highlights: [
             'Pembatasan menu berdasarkan peran',
             'Kunci sesi ke pengguna aktif',
-            'Keamanan password dan autentikasi aman',
+            'Keamanan kata sandi dan autentikasi terenkripsi',
         ],
     },
 ];
 
 const categoryTabs = [
     { id: 'all', label: 'Semua Fitur' },
+    { id: 'unggulan', label: '⭐ Fitur Unggulan' },
     { id: 'transaksi', label: 'Kasir & Transaksi' },
     { id: 'katalog', label: 'Katalog & Produk' },
     { id: 'inventaris', label: 'Stok & Gudang' },
-    { id: 'pengadaan', label: 'Supplier & Pembelian' },
+    { id: 'pengadaan', label: 'Pemasok & Pembelian' },
     { id: 'analitik', label: 'Laporan & Keamanan' },
 ];
 
 function filteredFeatures() {
     if (activeFeatureTab.value === 'all') return features;
+    if (activeFeatureTab.value === 'unggulan') {
+        return features.filter((f) => f.isUnggulan);
+    }
     if (activeFeatureTab.value === 'analitik') {
         return features.filter((f) => f.category === 'analitik' || f.category === 'keamanan');
     }
@@ -228,7 +321,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Tentang EduMart — Kasir Koperasi Sekolah Modern" />
+    <Head title="Tentang Scholify — Kasir Koperasi Sekolah Modern" />
 
     <div
         class="min-h-svh bg-gradient-to-br from-[#0f2a5c] via-[#1a3f7d] to-[#0b1f45] px-4 py-8 text-slate-900 selection:bg-[#0f2a5c] selection:text-white sm:px-6 md:px-10 md:py-10"
@@ -247,11 +340,11 @@ onMounted(() => {
                         href="/login"
                         class="font-medium text-blue-200 transition hover:text-white"
                     >
-                        home
+                        Home
                     </Link>
                     <span class="text-blue-200/60">—</span>
                     <Link href="/about" class="font-semibold text-white">
-                        about
+                        About
                     </Link>
                 </nav>
 
@@ -261,12 +354,12 @@ onMounted(() => {
                 >
                     <Link href="/" class="flex items-center gap-3 transition hover:opacity-90">
                         <img
-                            src="/logoEduMart.jpeg"
-                            alt="Logo EduMart"
+                            src="/logoScholify.png"
+                            alt="Logo Scholify"
                             class="h-10 w-10 rounded-2xl border border-slate-200 bg-white object-contain p-1 shadow-sm"
                         />
                         <div>
-                            <span class="text-base font-black tracking-tight text-white sm:text-lg">EduMart</span>
+                            <span class="text-base font-black tracking-tight text-white sm:text-lg">Scholify</span>
                             <span class="block text-[9px] font-bold tracking-widest text-blue-200/70 uppercase sm:text-[10px]">
                                 POS Sekolah Modern
                             </span>
@@ -295,7 +388,7 @@ onMounted(() => {
                         href="/login"
                         class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-blue-500 active:scale-95 sm:px-5 sm:py-2.5"
                     >
-                        <span>Masuk Kasir</span>
+                        <span>Masuk Aplikasi</span>
                         <ArrowRight class="h-3.5 w-3.5" />
                     </Link>
                 </div>
@@ -325,12 +418,12 @@ onMounted(() => {
                 <!-- ========================================================= -->
                 <section
                     id="cerita-kami"
-                    class="scroll-mt-28 overflow-hidden rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10"
+                    class="scroll-mt-28 overflow-hidden rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10 dark:border-slate-800 dark:bg-slate-900"
                 >
                     <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
                         <!-- Left Side: Visual Showcase Card -->
                         <div class="lg:col-span-6">
-                            <div class="relative overflow-hidden rounded-[28px] border border-slate-200/90 bg-gradient-to-br from-[#0f2a5c] via-[#153874] to-[#0c234d] p-6 text-white shadow-xl sm:p-8">
+                            <div class="relative overflow-hidden rounded-[28px] border border-slate-200/90 bg-gradient-to-br from-[#0f2a5c] via-[#153874] to-[#0c234d] p-6 text-white shadow-xl sm:p-8 dark:border-slate-700/80">
                                 <!-- Top Bar with School Pills -->
                                 <div class="flex items-center justify-between border-b border-white/15 pb-5">
                                     <div class="flex items-center gap-3">
@@ -339,7 +432,7 @@ onMounted(() => {
                                         </div>
                                         <div>
                                             <p class="text-xs font-semibold text-blue-200">Koperasi Sekolah</p>
-                                            <p class="text-sm font-bold text-white">EduMart Platform</p>
+                                            <p class="text-sm font-bold text-white">Scholify Platform</p>
                                         </div>
                                     </div>
                                     <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-semibold text-emerald-300 backdrop-blur-md">
@@ -393,42 +486,42 @@ onMounted(() => {
                         <div class="lg:col-span-6">
                             <!-- Eyebrow Strip -->
                             <div class="flex items-center gap-3">
-                                <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c]" />
-                                <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase">
-                                    About <strong>EduMart</strong>
+                                <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
+                                <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase dark:text-blue-300">
+                                    Tentang <strong>Scholify</strong>
                                 </span>
                             </div>
 
                             <!-- Title -->
-                            <h1 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.2]">
+                            <h1 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.2] dark:text-white">
                                 Cerita Kami
                             </h1>
 
                             <!-- Body text -->
-                            <div class="mt-4 space-y-3.5 text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+                            <div class="mt-4 space-y-3.5 text-sm leading-relaxed text-slate-600 sm:text-[15px] dark:text-slate-300">
                                 <p>
                                     Mari berkenalan dengan sistem yang dirancang dari ruang koperasi sekolah, didedikasikan untuk kebutuhan siswa, guru, dan pengurus kantin sehari-hari.
                                 </p>
                                 <p>
-                                    EduMart berawal dari pengamatan langsung di koperasi sekolah: saat bel istirahat berbunyi, puluhan siswa bergegas membeli alat tulis, buku latihan, serta makanan dan minuman. Pencatatan manual di buku kas kerap menimbulkan antrean panjang, kelelahan kasir, dan selisih stok di akhir hari.
+                                    Scholify berawal dari pengamatan langsung di koperasi sekolah: saat bel istirahat berbunyi, puluhan siswa bergegas membeli alat tulis, buku latihan, serta makanan dan minuman. Pencatatan manual di buku kas kerap menimbulkan antrean panjang, kelelahan kasir, dan selisih stok di akhir hari.
                                 </p>
                                 <p>
-                                    Kami menghadirkan EduMart sebagai jembatan digital—menggabungkan kecepatan sistem kasir modern dengan ketelitian pencatatan multi-tenant per sekolah.
+                                    Kami menghadirkan Scholify sebagai jembatan digital—menggabungkan kecepatan sistem kasir modern dengan ketelitian pencatatan multi-tenant per sekolah.
                                 </p>
                             </div>
 
                             <!-- Highlights Pills -->
                             <div class="mt-6 flex flex-wrap gap-2.5">
-                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                                    <Sparkles class="h-3.5 w-3.5 text-blue-600" />
+                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                    <Sparkles class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                                     <span>Cepat & Ramah Siswa</span>
                                 </div>
-                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                                    <Layers class="h-3.5 w-3.5 text-blue-600" />
+                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                    <Layers class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                                     <span>Pemisahan Multi-Sekolah</span>
                                 </div>
-                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                                    <Clock class="h-3.5 w-3.5 text-blue-600" />
+                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                    <Clock class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                                     <span>Laporan Realtime Otomatis</span>
                                 </div>
                             </div>
@@ -441,35 +534,35 @@ onMounted(() => {
                 <!-- ========================================================= -->
                 <section
                     id="filosofi"
-                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10"
+                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10 dark:border-slate-800 dark:bg-slate-900"
                 >
                     <div class="grid gap-8 lg:grid-cols-12 lg:gap-12">
                         <!-- Left: Title & Concept Tag -->
                         <div class="lg:col-span-5">
                             <div class="flex items-center gap-3">
-                                <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c]" />
-                                <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase">
-                                    Our <strong>Philosophy</strong>
+                                <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
+                                <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase dark:text-blue-300">
+                                    Filosofi <strong>Kami</strong>
                                 </span>
                             </div>
-                            <h2 class="mt-3 text-xl font-black tracking-tight text-slate-900 sm:text-3xl sm:leading-tight">
+                            <h2 class="mt-3 text-xl font-black tracking-tight text-slate-900 sm:text-3xl sm:leading-tight dark:text-white">
                                 Sederhanakan Transaksi, Majukan Koperasi Sekolah
                             </h2>
-                            <p class="mt-3 text-sm font-medium text-slate-500">
+                            <p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
                                 Setiap detik di jam istirahat sekolah sangat berharga. Kami memangkas kerumitan agar pelayanan berlangsung cepat dan tertib.
                             </p>
                         </div>
 
                         <!-- Right: Editorial Narrative Paragraphs (Fore Style) -->
-                        <div class="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-[15px] lg:col-span-7">
+                        <div class="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-[15px] lg:col-span-7 dark:text-slate-300">
                             <p>
                                 Di lingkungan pendidikan yang dinamis, pengelolaan koperasi bukan sekadar soal jual-beli, melainkan sarana pembelajaran kewirausahaan, pelayanan kebutuhan belajar siswa, dan keteladanan transparansi finansial.
                             </p>
                             <p>
-                                Filosofi EduMart berpijak pada prinsip <em>"Efficiency in Every Checkout"</em>. Kami percaya bahwa kasir yang didukung teknologi tepat guna—seperti scan barcode yang cepat, hitungan kembalian otomatis, dan cetak struk rapi—mampu memberikan pengalaman transaksi yang menyenangkan bagi seluruh warga sekolah.
+                                Filosofi Scholify berpijak pada prinsip <em>"Efficiency in Every Checkout"</em>. Kami percaya bahwa kasir yang didukung teknologi tepat guna—seperti pemindaian barcode yang cepat, hitungan kembalian otomatis, dan cetak struk rapi—mampu memberikan pengalaman transaksi yang menyenangkan bagi seluruh warga sekolah.
                             </p>
                             <p>
-                                Tidak ada lagi pencatatan tercecer, nota hilang, atau perbedaan stok fisik dengan catatan pembukuan. EduMart menjaga integritas setiap rupiah yang masuk ke kas koperasi sekolah.
+                                Tidak ada lagi pencatatan tercecer, nota hilang, atau perbedaan stok fisik dengan catatan pembukuan. Scholify menjaga integritas setiap rupiah yang masuk ke kas koperasi sekolah.
                             </p>
                         </div>
                     </div>
@@ -480,21 +573,21 @@ onMounted(() => {
                 <!-- ========================================================= -->
                 <section
                     id="about-our-products"
-                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10"
+                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10 dark:border-slate-800 dark:bg-slate-900"
                 >
                     <!-- Section Header -->
                     <div class="text-center">
                         <div class="inline-flex items-center gap-3">
-                            <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c]" />
-                            <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase">
-                                About our <strong>Products</strong>
+                            <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
+                            <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase dark:text-blue-300">
+                                Fitur & Layanan <strong>Produk</strong>
                             </span>
-                            <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c]" />
+                            <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
                         </div>
-                        <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                        <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
                             Ekosistem Kasir Terlengkap & Terpadu
                         </h2>
-                        <p class="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
+                        <p class="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                             Semua fitur yang Anda butuhkan untuk operasional koperasi sekolah—dari meja kasir, pengadaan supplier, manajemen gudang, hingga laporan audit manajemen.
                         </p>
                     </div>
@@ -506,10 +599,14 @@ onMounted(() => {
                             :key="tab.id"
                             type="button"
                             :class="[
-                                'rounded-full px-4 py-1.5 text-xs font-bold transition-all',
+                                'rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer',
                                 activeFeatureTab === tab.id
-                                    ? 'bg-[#0f2a5c] text-white shadow-md shadow-[#0f2a5c]/25'
-                                    : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900',
+                                    ? tab.id === 'unggulan'
+                                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 ring-2 ring-amber-400 font-extrabold'
+                                        : 'bg-[#0f2a5c] text-white shadow-md shadow-[#0f2a5c]/25 dark:bg-blue-600 dark:shadow-blue-900/40'
+                                    : tab.id === 'unggulan'
+                                        ? 'border border-amber-300 bg-amber-50/80 text-amber-900 hover:bg-amber-100 dark:border-amber-700/80 dark:bg-amber-950/40 dark:text-amber-300'
+                                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white',
                             ]"
                             @click="activeFeatureTab = tab.id"
                         >
@@ -517,46 +614,75 @@ onMounted(() => {
                         </button>
                     </div>
 
-                    <!-- Feature Cards Grid (10 Features of EduMart) -->
+                    <!-- Feature Cards Grid -->
                     <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div
                             v-for="feat in filteredFeatures()"
                             :key="feat.id"
-                            class="group relative flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md"
+                            class="group relative flex flex-col justify-between rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                            :class="
+                                feat.isUnggulan
+                                    ? 'border-amber-300/80 bg-gradient-to-b from-amber-50/30 via-white to-white hover:border-amber-400 dark:border-amber-700/60 dark:from-amber-950/20 dark:via-slate-800/60 dark:to-slate-800/60 dark:hover:border-amber-500'
+                                    : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-blue-500/50 dark:hover:bg-slate-800'
+                            "
                         >
                             <div>
                                 <!-- Top Row: Icon & Badge -->
                                 <div class="flex items-center justify-between">
                                     <div
-                                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f2a5c] text-white shadow-md shadow-[#0f2a5c]/20 transition-transform group-hover:scale-105"
+                                        class="flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-md transition-transform group-hover:scale-105"
+                                        :class="
+                                            feat.isUnggulan
+                                                ? 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-500/25 dark:from-amber-500 dark:to-amber-600'
+                                                : 'bg-[#0f2a5c] shadow-[#0f2a5c]/20 dark:bg-blue-600'
+                                        "
                                     >
                                         <component :is="feat.icon" class="h-5 w-5" />
                                     </div>
                                     <span
-                                        class="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-[#0f2a5c]"
+                                        class="rounded-full px-3 py-1 text-[11px] font-bold"
+                                        :class="
+                                            feat.isUnggulan
+                                                ? 'border border-amber-300/80 bg-amber-100 text-amber-900 dark:border-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                                                : 'bg-blue-50 text-[#0f2a5c] dark:bg-blue-950/60 dark:text-blue-300'
+                                        "
                                     >
                                         {{ feat.badge }}
                                     </span>
                                 </div>
 
                                 <!-- Title & Description -->
-                                <h3 class="mt-4 text-base font-bold tracking-tight text-slate-900">
+                                <h3 class="mt-4 text-base font-bold tracking-tight text-slate-900 dark:text-white">
                                     {{ feat.title }}
                                 </h3>
-                                <p class="mt-1.5 text-xs leading-relaxed text-slate-500">
+                                <p class="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                                     {{ feat.desc }}
                                 </p>
                             </div>
 
                             <!-- Feature Highlights Checklist -->
-                            <div class="mt-4 border-t border-slate-100 pt-4">
+                            <div
+                                class="mt-4 border-t pt-4"
+                                :class="
+                                    feat.isUnggulan
+                                        ? 'border-amber-200/60 dark:border-amber-900/40'
+                                        : 'border-slate-100 dark:border-slate-700/60'
+                                "
+                            >
                                 <ul class="space-y-1.5">
                                     <li
                                         v-for="(point, pIdx) in feat.highlights"
                                         :key="pIdx"
-                                        class="flex items-center gap-2 text-[11px] font-medium text-slate-700"
+                                        class="flex items-center gap-2 text-[11px] font-medium text-slate-700 dark:text-slate-300"
                                     >
-                                        <CheckCircle2 class="h-3 w-3 shrink-0 text-blue-600" />
+                                        <CheckCircle2
+                                            class="h-3 w-3 shrink-0"
+                                            :class="
+                                                feat.isUnggulan
+                                                    ? 'text-amber-600 dark:text-amber-400'
+                                                    : 'text-blue-600 dark:text-blue-400'
+                                            "
+                                        />
                                         <span>{{ point }}</span>
                                     </li>
                                 </ul>
@@ -565,30 +691,30 @@ onMounted(() => {
                     </div>
 
                     <!-- Additional Standards Banner (Halal/Quality Style in Fore) -->
-                    <div class="mt-10 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-6 sm:p-8">
+                    <div class="mt-10 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-800/40">
                         <div class="grid items-center gap-6 md:grid-cols-12">
                             <div class="md:col-span-8">
                                 <div class="flex items-center gap-3">
-                                    <span class="h-[2px] w-6 rounded-full bg-blue-600" />
-                                    <span class="text-xs font-bold tracking-wider text-blue-700 uppercase">
+                                    <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
+                                    <span class="text-xs font-bold tracking-wider text-blue-700 uppercase dark:text-blue-400">
                                         Standar Kualitas Sistem
                                     </span>
                                 </div>
-                                <h3 class="mt-1.5 text-lg font-black text-slate-900 sm:text-xl">
+                                <h3 class="mt-1.5 text-lg font-black text-slate-900 sm:text-xl dark:text-white">
                                     Akurat, Aman, & Tersinkronisasi Otomatis
                                 </h3>
-                                <p class="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm">
-                                    EduMart memastikan pembukuan kasir terisolasi per sekolah mitra. Data transaksi penjualan, pembelian stok, dan riwayat pelanggan tersimpan aman di database dengan integritas relasi yang ketat.
+                                <p class="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
+                                    Scholify memastikan pembukuan kasir terisolasi per sekolah mitra. Data transaksi penjualan, pembelian stok, dan riwayat pelanggan tersimpan aman di database dengan integritas relasi yang ketat.
                                 </p>
                             </div>
                             <div class="flex flex-wrap items-center justify-start gap-3 md:col-span-4 md:justify-end">
-                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm">
-                                    <p class="text-lg font-black text-[#0f2a5c]">100%</p>
-                                    <p class="text-[11px] font-medium text-slate-500">Pencatatan Realtime</p>
+                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                                    <p class="text-lg font-black text-[#0f2a5c] dark:text-blue-400">100%</p>
+                                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Pencatatan Realtime</p>
                                 </div>
-                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm">
-                                    <p class="text-lg font-black text-[#0f2a5c]">4+</p>
-                                    <p class="text-[11px] font-medium text-slate-500">Sekolah Mitra</p>
+                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                                    <p class="text-lg font-black text-[#0f2a5c] dark:text-blue-400">4+</p>
+                                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Sekolah Mitra</p>
                                 </div>
                             </div>
                         </div>
@@ -603,7 +729,7 @@ onMounted(() => {
                 >
                     <div class="mx-auto max-w-xl">
                         <span class="inline-block rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-blue-200 backdrop-blur-md">
-                            Mulai Bersama EduMart
+                            Mulai Bersama Scholify
                         </span>
                         <h2 class="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
                             Siap Mengoptimalkan Koperasi Sekolah Anda?
@@ -616,7 +742,7 @@ onMounted(() => {
                                 href="/login"
                                 class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-lg transition hover:bg-blue-500 active:scale-95"
                             >
-                                <span>Buka Halaman Kasir</span>
+                                <span>Masuk ke Aplikasi Kasir</span>
                                 <ArrowRight class="h-4 w-4" />
                             </Link>
                             <button
@@ -636,7 +762,7 @@ onMounted(() => {
             <!-- ========================================================= -->
             <footer class="text-center text-xs text-blue-200/70">
                 <p class="font-medium">
-                    EduMart — Kasir Alat-Alat Sekolah, Makanan & Minuman
+                    Scholify — Kasir Alat-Alat Sekolah, Makanan & Minuman
                 </p>
                 <p class="mt-1 text-[11px] text-blue-200/50">
                     SMKN 1 · SMKN 2 · SMKN 3 · SMKN 4 Tasikmalaya

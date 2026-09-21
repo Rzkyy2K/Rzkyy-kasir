@@ -57,7 +57,7 @@ const displayNav = computed(() => {
                             : 'font-medium text-blue-200 hover:text-white'
                     "
                 >
-                    home
+                    Home
                 </Link>
                 <span class="text-blue-200/60">—</span>
                 <Link
@@ -69,46 +69,46 @@ const displayNav = computed(() => {
                             : 'font-medium text-blue-200 hover:text-white'
                     "
                 >
-                    about
+                    About
                 </Link>
             </nav>
 
-            <div class="overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div class="overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900 dark:border dark:border-slate-800">
                 <div
-                    class="flex flex-col items-center gap-2 bg-gradient-to-b from-blue-50 to-white px-6 pt-8 pb-2"
+                    class="flex flex-col items-center gap-2 bg-gradient-to-b from-blue-50 to-white px-6 pt-8 pb-2 dark:from-slate-800/80 dark:to-slate-900"
                 >
                     <Link
                         :href="home()"
                         class="flex flex-col items-center gap-2"
                     >
                         <img
-                            src="/logoEduMart.jpeg"
-                            alt="Logo EduMart"
-                            class="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-contain p-1.5 shadow-sm"
+                            src="/logoScholify.png"
+                            alt="Logo Scholify"
+                            class="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-contain p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
                         />
                         <span
-                            class="text-lg font-black tracking-tight text-[#0f2a5c]"
+                            class="text-lg font-black tracking-tight text-[#0f2a5c] dark:text-blue-400"
                         >
-                            EduMart
+                            Scholify
                         </span>
                         <span
-                            class="-mt-2 text-[11px] font-medium text-slate-400"
+                            class="-mt-2 text-[11px] font-medium text-slate-400 dark:text-slate-400"
                         >
-                            Kasir Alat-Alat Sekolah
+                            Smart School POS
                         </span>
                     </Link>
                     <div class="space-y-1 pt-2 text-center">
-                        <h1 class="text-lg font-bold text-slate-900">
+                        <h1 class="text-lg font-bold text-slate-900 dark:text-white">
                             {{
                                 title ||
                                 (isConfirmPassword
                                     ? 'Konfirmasi Password'
                                     : isLogin
-                                      ? 'Masuk ke EduMart'
+                                      ? 'Masuk ke Scholify'
                                       : '')
                             }}
                         </h1>
-                        <p class="text-center text-sm text-slate-500">
+                        <p class="text-center text-sm text-slate-500 dark:text-slate-400">
                             {{
                                 description ||
                                 (isConfirmPassword

@@ -22,7 +22,7 @@ const pos = usePosStore();
 const lainnyaOpen = ref(false);
 
 const menus = [
-    { key: 'dashboard', label: 'Home', href: '/dashboard', icon: LayoutDashboard },
+    { key: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { key: 'kasir', label: 'Kasir', href: '/kasir', icon: ShoppingCart },
     { key: 'produk', label: 'Produk', href: '/produk', icon: ShoppingBag },
     { key: 'stok', label: 'Stok', href: '/stok', icon: Boxes },
@@ -32,7 +32,7 @@ const menus = [
     { key: 'supplier', label: 'Supplier', href: '/supplier', icon: Store },
     { key: 'pelanggan', label: 'Pelanggan', href: '/pelanggan', icon: Users },
     { key: 'laporan', label: 'Laporan', href: '/laporan', icon: BarChart3 },
-    { key: 'users', label: 'User', fullLabel: 'Manajemen User', href: '/users', icon: Users },
+    { key: 'users', label: 'Pengguna', fullLabel: 'Manajemen Pengguna', href: '/users', icon: Users },
     { key: 'pengaturan', label: 'Pengaturan', href: '/pengaturan', icon: Settings },
 ];
 
@@ -71,7 +71,7 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
 
 <template>
     <nav
-        class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden"
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur transition-colors duration-200 md:hidden dark:border-slate-800 dark:bg-slate-900/95"
         style="padding-bottom: env(safe-area-inset-bottom)"
     >
         <div
@@ -83,14 +83,14 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
                 :key="m.key"
                 :href="m.href"
                 :title="m.fullLabel ?? m.label"
-                class="flex flex-col items-center gap-1 px-1 pt-2 pb-2"
+                class="flex flex-col items-center gap-1 px-1 pt-2 pb-2 active-press"
             >
                 <span
                     :class="[
                         'flex h-7 items-center justify-center rounded-full px-5 transition',
                         isActive(m.href)
-                            ? 'bg-[#0f2a5c] text-white'
-                            : 'text-slate-500',
+                            ? 'bg-[#0f2a5c] text-white dark:bg-blue-600'
+                            : 'text-slate-500 dark:text-slate-400',
                     ]"
                 >
                     <component :is="m.icon" class="h-5 w-5 shrink-0" />
@@ -99,8 +99,8 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
                     :class="[
                         'max-w-full truncate text-[10px] leading-tight',
                         isActive(m.href)
-                            ? 'font-bold text-[#0f2a5c]'
-                            : 'font-medium text-slate-500',
+                            ? 'font-bold text-[#0f2a5c] dark:text-blue-400'
+                            : 'font-medium text-slate-500 dark:text-slate-400',
                     ]"
                 >
                     {{ m.label }}
@@ -109,15 +109,15 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
             <button
                 v-if="hasLainnya"
                 type="button"
-                class="flex flex-col items-center gap-1 px-1 pt-2 pb-2"
+                class="flex flex-col items-center gap-1 px-1 pt-2 pb-2 active-press"
                 @click="lainnyaOpen = true"
             >
                 <span
                     :class="[
                         'flex h-7 items-center justify-center rounded-full px-5 transition',
                         lainnyaActive || lainnyaOpen
-                            ? 'bg-[#0f2a5c] text-white'
-                            : 'text-slate-500',
+                            ? 'bg-[#0f2a5c] text-white dark:bg-blue-600'
+                            : 'text-slate-500 dark:text-slate-400',
                     ]"
                 >
                     <LayoutGrid class="h-5 w-5 shrink-0" />
@@ -126,8 +126,8 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
                     :class="[
                         'text-[10px] leading-tight',
                         lainnyaActive || lainnyaOpen
-                            ? 'font-bold text-[#0f2a5c]'
-                            : 'font-medium text-slate-500',
+                            ? 'font-bold text-[#0f2a5c] dark:text-blue-400'
+                            : 'font-medium text-slate-500 dark:text-slate-400',
                     ]"
                 >
                     Lainnya
@@ -137,43 +137,55 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
     </nav>
 
     <Teleport to="body">
-        <div v-if="lainnyaOpen" class="fixed inset-0 z-50 lg:hidden">
-            <div class="absolute inset-0 bg-slate-900/50" @click="lainnyaOpen = false" />
-            <div
-                class="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl bg-white p-4"
-                style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))"
-            >
-                <div class="mb-3 flex items-center justify-between px-1">
-                    <p class="text-sm font-bold text-slate-900">Menu Lainnya</p>
-                    <button
-                        type="button"
-                        class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
-                        @click="lainnyaOpen = false"
-                    >
-                        <X class="h-5 w-5" />
-                    </button>
-                </div>
-                <div class="grid grid-cols-4 gap-2">
-                    <Link
-                        v-for="m in lainnyaItems"
-                        :key="m.key"
-                        :href="m.href"
-                        :title="m.fullLabel ?? m.label"
-                        :class="[
-                            'flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition',
-                            isActive(m.href)
-                                ? 'border-[#0f2a5c] bg-blue-50 text-[#0f2a5c]'
-                                : 'border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-slate-50',
-                        ]"
-                        @click="lainnyaOpen = false"
-                    >
-                        <component :is="m.icon" class="h-5 w-5 shrink-0" />
-                        <span class="w-full truncate text-[11px] font-semibold leading-tight">
-                            {{ m.fullLabel ?? m.label }}
-                        </span>
-                    </Link>
+        <Transition
+            enter-active-class="transition-opacity duration-200 ease-out"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition-opacity duration-150 ease-in"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div v-if="lainnyaOpen" class="fixed inset-0 z-50 lg:hidden">
+                <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs" @click="lainnyaOpen = false" />
+                <div
+                    class="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl dark:border-t dark:border-slate-800 dark:bg-slate-900 animate-in-slide-up"
+                    style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))"
+                >
+                    <!-- Drag handle bar -->
+                    <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
+
+                    <div class="mb-3 flex items-center justify-between px-1">
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">Menu Lainnya</p>
+                        <button
+                            type="button"
+                            class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 active-press dark:text-slate-400 dark:hover:bg-slate-800"
+                            @click="lainnyaOpen = false"
+                        >
+                            <X class="h-5 w-5" />
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <Link
+                            v-for="m in lainnyaItems"
+                            :key="m.key"
+                            :href="m.href"
+                            :title="m.fullLabel ?? m.label"
+                            :class="[
+                                'flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition active-press',
+                                isActive(m.href)
+                                    ? 'border-[#0f2a5c] bg-blue-50 text-[#0f2a5c] dark:border-blue-500 dark:bg-blue-950/60 dark:text-blue-300'
+                                    : 'border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-slate-800',
+                            ]"
+                            @click="lainnyaOpen = false"
+                        >
+                            <component :is="m.icon" class="h-5 w-5 shrink-0" />
+                            <span class="w-full truncate text-[11px] font-semibold leading-tight">
+                                {{ m.fullLabel ?? m.label }}
+                            </span>
+                        </Link>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Transition>
     </Teleport>
 </template>

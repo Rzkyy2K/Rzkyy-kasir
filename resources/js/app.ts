@@ -6,10 +6,10 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'EduMart';
+const appName = import.meta.env.VITE_APP_NAME || 'Scholify';
 const pinia = createPinia();
 
-// Halaman POS EduMart (langsung di resources/js/pages, tanpa subfolder).
+// Halaman POS Scholify (langsung di resources/js/pages, tanpa subfolder).
 // settings/Security & settings/Profile dibuat halaman mandiri bergaya login.
 const posPages = new Set([
     'Dashboard',

@@ -20,6 +20,9 @@ class Penjualan extends Model
     {
         return [
             'tanggal_penjualan' => 'datetime',
+            'void_requested_at' => 'datetime',
+            'void_admin_verified_at' => 'datetime',
+            'void_approved_at' => 'datetime',
             'total_faktur' => 'decimal:2',
             'total_bayar' => 'decimal:2',
             'kembalian' => 'decimal:2',
@@ -34,6 +37,21 @@ class Penjualan extends Model
     public function kasir(): BelongsTo
     {
         return $this->belongsTo(PosUser::class, 'id_user', 'id_user');
+    }
+
+    public function voidRequester(): BelongsTo
+    {
+        return $this->belongsTo(PosUser::class, 'void_requested_by', 'id_user');
+    }
+
+    public function adminVerifier(): BelongsTo
+    {
+        return $this->belongsTo(PosUser::class, 'void_admin_verified_by', 'id_user');
+    }
+
+    public function voidApprover(): BelongsTo
+    {
+        return $this->belongsTo(PosUser::class, 'void_approved_by', 'id_user');
     }
 
     public function pelanggan(): BelongsTo

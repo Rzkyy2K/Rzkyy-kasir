@@ -14,7 +14,7 @@ defineEmits<{ (e: 'update:modelValue', v: string): void }>();
             :value="modelValue"
             type="search"
             :placeholder="placeholder ?? 'Cari barang, barcode…'"
-            class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+            class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-900/40 transition-colors"
             @input="
                 $emit(
                     'update:modelValue',

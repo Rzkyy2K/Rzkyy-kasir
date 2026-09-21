@@ -115,6 +115,28 @@ export interface Penjualan {
     jenis_transaksi: string;
     cara_bayar: string;
     note?: string | null;
+    status_void?:
+        | 'none'
+        | 'pending'
+        | 'pending_admin'
+        | 'pending_super_admin'
+        | 'approved'
+        | 'rejected'
+        | string;
+    alasan_void?: string | null;
+    void_telepon_kasir?: string | null;
+    void_requested_by?: number | null;
+    void_requested_at?: string | null;
+    void_admin_verified_by?: number | null;
+    void_admin_verified_at?: string | null;
+    void_admin_notes?: string | null;
+    void_approved_by?: number | null;
+    void_approved_at?: string | null;
+    void_reject_reason?: string | null;
+    void_requester?: PosUser;
+    admin_verifier?: PosUser;
+    void_approver?: PosUser;
+    sekolah?: Sekolah;
     kasir?: PosUser;
     pelanggan?: Pelanggan;
     detail?: PenjualanDetail[];
@@ -147,3 +169,39 @@ export interface HeldTransaction {
     diskonNominal: number;
     total: number;
 }
+
+export interface PrediksiStokItem {
+    id_barang: number;
+    nama: string;
+    barcode?: string | null;
+    satuan: string;
+    harga_beli: number;
+    harga_jual: number;
+    stok: number;
+    total_terjual: number;
+    total_omset: number;
+    frekuensi_transaksi: number;
+    laju_harian: number;
+    estimasi_hari_habis: number | null;
+    status: 'kritis' | 'waspada' | 'aman';
+    status_text: string;
+    rekomendasi_restock: number;
+    kategori?: Kategori;
+    supplier?: Supplier;
+    sekolah?: Sekolah;
+}
+
+export interface PrediksiStokSummary {
+    total_produk: number;
+    total_kritis: number;
+    total_waspada: number;
+    total_aman: number;
+    estimasi_anggaran_restock: number;
+}
+
+export interface PrediksiStokData {
+    days: number;
+    summary: PrediksiStokSummary;
+    items: PrediksiStokItem[];
+}
+

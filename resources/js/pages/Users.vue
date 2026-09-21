@@ -75,7 +75,7 @@ async function load() {
         lastPage.value = res.last_page;
         total.value = res.total;
     } catch (e) {
-        toast.error(friendlyError(e, 'Daftar user gagal dimuat.'));
+        toast.error(friendlyError(e, 'Gagal memuat daftar pengguna.'));
     } finally {
         loading.value = false;
     }
@@ -86,7 +86,7 @@ async function loadSekolah() {
     try {
         rowsSekolah.value = await fetchSekolah(true);
     } catch (e) {
-        toast.error(friendlyError(e, 'Daftar sekolah gagal dimuat.'));
+        toast.error(friendlyError(e, 'Gagal memuat daftar instansi sekolah.'));
     } finally {
         loadingSekolah.value = false;
     }
@@ -136,7 +136,7 @@ async function simpan() {
         await pos.loadUsers();
     } catch (e) {
         toast.error(
-            friendlyError(e, 'User gagal disimpan. Silakan coba lagi.'),
+            friendlyError(e, 'Gagal menyimpan data pengguna. Silakan coba kembali.'),
         );
     } finally {
         saving.value = false;
@@ -144,13 +144,13 @@ async function simpan() {
 }
 
 async function nonaktifkan(u: PosUser) {
-    if (!confirm(`Hapus permanen user "${u.nama_lengkap}" (${u.username})? Username bisa dipakai lagi.`)) return;
+    if (!confirm(`Hapus permanen pengguna "${u.nama_lengkap}" (${u.username})? Tindakan ini tidak dapat dibatalkan.`)) return;
     try {
         const res = await deletePosUser(u.id_user);
-        toast.success(res.message ?? 'User berhasil dihapus.');
+        toast.success(res.message ?? 'Pengguna berhasil dihapus.');
         await load();
     } catch (e) {
-        toast.error(friendlyError(e, 'User gagal dihapus.'));
+        toast.error(friendlyError(e, 'Gagal menghapus pengguna.'));
     }
 }
 
@@ -204,7 +204,7 @@ async function simpanSekolah() {
                     roles.value.find((r) => r.nama_role === 'super admin') ??
                     roles.value.find((r) => r.id_role === 1);
                 if (!superRole) {
-                    toast.error('Role super admin tidak ditemukan, akun super admin batal dibuat.');
+                    toast.error('Peran super admin tidak ditemukan, akun super admin batal dibuat.');
                 } else {
                     await createPosUser({
                         id_sekolah: res.data.id_sekolah,
@@ -227,7 +227,7 @@ async function simpanSekolah() {
         await pos.refreshSekolah();
     } catch (e) {
         toast.error(
-            friendlyError(e, 'Sekolah gagal disimpan. Silakan coba lagi.'),
+            friendlyError(e, 'Gagal menyimpan data sekolah. Silakan coba kembali.'),
         );
     } finally {
         savingSekolah.value = false;
@@ -235,14 +235,14 @@ async function simpanSekolah() {
 }
 
 async function hapusSekolah(s: Sekolah) {
-    if (!confirm(`Hapus permanen "${s.nama_sekolah}" beserta kodenya (${s.kode_sekolah})? Tindakan ini tidak bisa dibatalkan.`)) return;
+    if (!confirm(`Hapus data instansi sekolah "${s.nama_sekolah}" (${s.kode_sekolah})? Tindakan ini tidak dapat dibatalkan.`)) return;
     try {
         const res = await deleteSekolah(s.id_sekolah);
         toast.success(res.message);
         await loadSekolah();
         await pos.refreshSekolah();
     } catch (e) {
-        toast.error(friendlyError(e, 'Sekolah gagal dihapus.'));
+        toast.error(friendlyError(e, 'Gagal menghapus data sekolah.'));
     }
 }
 
@@ -253,7 +253,7 @@ async function aktifkanSekolah(s: Sekolah) {
         await loadSekolah();
         await pos.refreshSekolah();
     } catch (e) {
-        toast.error(friendlyError(e, 'Sekolah gagal diaktifkan.'));
+        toast.error(friendlyError(e, 'Gagal mengaktifkan kembali instansi sekolah.'));
     }
 }
 
@@ -275,35 +275,35 @@ watch(
 </script>
 
 <template>
-    <Head title="Manajemen User" />
+    <Head title="Manajemen Pengguna" />
     <PosLayout>
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+            <div class="flex items-center gap-3 min-w-0">
                 <div
-                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0f2a5c] text-white shadow"
+                    class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0f2a5c] text-white shadow dark:border dark:border-blue-900/50 dark:bg-blue-950/80 dark:text-blue-400"
                 >
                     <Users class="h-5 w-5" />
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-slate-900">Manajemen User</h1>
-                    <p class="text-sm text-slate-500">
-                        Kelola akun tb_user, peran, dan sekolah (khusus developer)
+                <div class="min-w-0">
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">Manajemen Pengguna</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
+                        Kelola akun pengguna, hak akses peran, dan data instansi sekolah
                     </p>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex w-full sm:w-auto items-center gap-2">
                 <button
                     v-if="tab === 'user'"
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800"
+                    class="inline-flex w-full sm:w-auto justify-center cursor-pointer items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambah"
                 >
-                    <Plus class="h-4 w-4" /> Tambah User
+                    <Plus class="h-4 w-4" /> Tambah Pengguna
                 </button>
                 <button
                     v-else-if="pos.can('sekolah')"
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800"
+                    class="inline-flex w-full sm:w-auto justify-center cursor-pointer items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambahSekolah"
                 >
                     <Plus class="h-4 w-4" /> Tambah Sekolah
@@ -313,27 +313,27 @@ watch(
 
         <EmptyState
             v-if="!pos.loading && !pos.can('users')"
-            title="Akses ditolak"
-            message="Halaman ini khusus peran Developer. Login sebagai developer untuk membukanya."
+            title="Akses Dibatasi"
+            message="Halaman ini memerlukan hak akses tingkat Developer atau Administrator."
         />
         <template v-else>
             <!-- Tabs: User | Sekolah (sekolah hanya untuk developer) -->
             <div
                 v-if="pos.can('sekolah')"
-                class="mb-4 flex w-fit rounded-xl bg-slate-100 p-1"
+                class="mb-4 flex w-fit rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
             >
                 <button
                     type="button"
-                    class="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition"
-                    :class="tab === 'user' ? 'bg-white shadow text-[#0f2a5c]' : 'text-slate-500 hover:text-slate-700'"
+                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition"
+                    :class="tab === 'user' ? 'bg-white shadow-xs text-[#0f2a5c] dark:bg-slate-900 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
                     @click="tab = 'user'"
                 >
-                    <Users class="h-4 w-4" /> User
+                    <Users class="h-4 w-4" /> Pengguna
                 </button>
                 <button
                     type="button"
-                    class="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition"
-                    :class="tab === 'sekolah' ? 'bg-white shadow text-[#0f2a5c]' : 'text-slate-500 hover:text-slate-700'"
+                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition"
+                    :class="tab === 'sekolah' ? 'bg-white shadow-xs text-[#0f2a5c] dark:bg-slate-900 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
                     @click="tab = 'sekolah'"
                 >
                     <School class="h-4 w-4" /> Sekolah
@@ -346,78 +346,82 @@ watch(
                     <div
                         v-for="i in 4"
                         :key="i"
-                        class="h-16 animate-pulse rounded-xl bg-white"
+                        class="h-16 animate-pulse rounded-xl bg-white dark:bg-slate-900"
                     />
                 </div>
-                <EmptyState v-else-if="rows.length === 0" title="Belum ada user" />
-                <div
-                    v-else
-                    class="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
-                >
-                    <table class="w-full min-w-170 text-left text-sm">
-                        <thead>
-                            <tr
-                                class="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase"
-                            >
-                                <th class="px-4 py-3">Nama</th>
-                                <th class="px-4 py-3">Username</th>
-                                <th class="px-4 py-3">Role</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3 text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="u in rows"
-                                :key="u.id_user"
-                                class="border-b border-slate-50"
-                            >
-                                <td class="px-4 py-3 font-semibold">
-                                    {{ u.nama_lengkap }}
-                                </td>
-                                <td class="px-4 py-3 text-slate-500">
-                                    {{ u.username }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span
-                                        class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700"
-                                        >{{ u.role?.nama_role }}</span
-                                    >
-                                </td>
-                                <td class="px-4 py-3">
-                                    <span
-                                        :class="
-                                            u.is_active
-                                                ? 'bg-emerald-50 text-emerald-600'
-                                                : 'bg-slate-100 text-slate-500'
-                                        "
-                                        class="rounded-full px-2 py-0.5 text-xs font-semibold"
-                                    >
-                                        {{ u.is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1">
-                                        <button
-                                            type="button"
-                                            class="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700"
-                                            @click="bukaEdit(u)"
+                <EmptyState
+                    v-else-if="rows.length === 0"
+                    title="Belum Ada Pengguna"
+                    message="Belum ada data akun pengguna kasir yang terdaftar."
+                />
+                <template v-else>
+                    <!-- Card View (Responsive: Mobile, Tablet & Laptop) -->
+                    <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                        <div
+                            v-for="u in rows"
+                            :key="u.id_user"
+                            class="relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900 min-w-0"
+                        >
+                            <!-- Top: Avatar, Name, Username, and Status Badge -->
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div
+                                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-sm text-blue-700 shadow-inner dark:bg-blue-950/60 dark:text-blue-400"
+                                >
+                                    {{ u.nama_lengkap ? u.nama_lengkap.charAt(0).toUpperCase() : 'U' }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1.5">
+                                        <h3 class="font-bold text-sm text-slate-800 truncate dark:text-slate-100" :title="u.nama_lengkap">
+                                            {{ u.nama_lengkap }}
+                                        </h3>
+                                        <span
+                                            :class="
+                                                u.is_active
+                                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                                    : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                            "
+                                            class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
                                         >
-                                            <Pencil class="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                                            @click="nonaktifkan(u)"
-                                        >
-                                            <Power class="h-4 w-4" />
-                                        </button>
+                                            {{ u.is_active ? 'Aktif' : 'Nonaktif' }}
+                                        </span>
                                     </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    <p class="text-xs text-slate-400 truncate dark:text-slate-500">
+                                        @{{ u.username }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Bottom: Role Badge & Action Buttons -->
+                            <div class="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800/80">
+                                <span
+                                    class="inline-block truncate rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 max-w-32"
+                                >
+                                    {{ u.role?.nama_role ?? '-' }}
+                                </span>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                        type="button"
+                                        title="Edit Pengguna"
+                                        class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-blue-400 transition"
+                                        @click="bukaEdit(u)"
+                                    >
+                                        <Pencil class="h-3.5 w-3.5" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        title="Hapus Pengguna"
+                                        class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-red-200/80 bg-red-50/50 px-2.5 py-1 text-xs font-medium text-red-600 shadow-2xs hover:bg-red-100 hover:text-red-700 hover:border-red-300 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50 transition"
+                                        @click="nonaktifkan(u)"
+                                    >
+                                        <Power class="h-3.5 w-3.5" />
+                                        <span>Hapus</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
                 <Pagination
                     :page="page"
                     :last-page="lastPage"
@@ -437,135 +441,149 @@ watch(
                     <div
                         v-for="i in 4"
                         :key="i"
-                        class="h-16 animate-pulse rounded-xl bg-white"
+                        class="h-16 animate-pulse rounded-xl bg-white dark:bg-slate-900"
                     />
                 </div>
-                <EmptyState v-else-if="rowsSekolah.length === 0" title="Belum ada sekolah" />
-                <div
-                    v-else
-                    class="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
-                >
-                    <table class="w-full min-w-170 text-left text-sm">
-                        <thead>
-                            <tr
-                                class="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase"
-                            >
-                                <th class="px-4 py-3">Kode</th>
-                                <th class="px-4 py-3">Nama Sekolah</th>
-                                <th class="px-4 py-3">Alamat / Website</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3 text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="s in rowsSekolah"
-                                :key="s.id_sekolah"
-                                class="border-b border-slate-50"
-                            >
-                                <td class="px-4 py-3 font-mono text-xs font-bold text-slate-600">
-                                    {{ s.kode_sekolah }}
-                                </td>
-                                <td class="px-4 py-3 font-semibold">
-                                    {{ s.nama_sekolah }}
-                                </td>
-                                <td class="max-w-60 px-4 py-3 text-slate-500">
-                                    <p class="truncate text-xs">
-                                        {{ s.alamat_sekolah ?? s.alamat ?? '—' }}
-                                    </p>
-                                    <p class="truncate text-xs text-blue-600">
-                                        {{ s.website ?? '' }}
-                                    </p>
-                                </td>
-                                <td class="px-4 py-3">
+                <EmptyState
+                    v-else-if="rowsSekolah.length === 0"
+                    title="Belum Ada Data Sekolah"
+                    message="Belum ada data instansi sekolah yang terdaftar."
+                />
+                <template v-else>
+                    <!-- Card View (Responsive: Mobile, Tablet & Laptop) -->
+                    <div class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                        <div
+                            v-for="s in rowsSekolah"
+                            :key="s.id_sekolah"
+                            class="relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900 min-w-0"
+                        >
+                            <!-- Top: Icon, Code, Status, Name, Address -->
+                            <div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="font-mono text-xs font-bold text-slate-600 dark:text-slate-300">
+                                        {{ s.kode_sekolah }}
+                                    </span>
                                     <span
                                         :class="
                                             s.is_active
-                                                ? 'bg-emerald-50 text-emerald-600'
-                                                : 'bg-slate-100 text-slate-500'
+                                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                                         "
-                                        class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                                        class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
                                     >
                                         {{ s.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex justify-end gap-1">
-                                        <button
-                                            type="button"
-                                            title="Edit"
-                                            class="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700"
-                                            @click="bukaEditSekolah(s)"
-                                        >
-                                            <Pencil class="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            v-if="s.is_active"
-                                            type="button"
-                                            title="Hapus permanen"
-                                            class="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                                            @click="hapusSekolah(s)"
-                                        >
-                                            <Power class="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            v-else
-                                            type="button"
-                                            title="Aktifkan kembali"
-                                            class="rounded-lg p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
-                                            @click="aktifkanSekolah(s)"
-                                        >
-                                            <RotateCcw class="h-4 w-4" />
-                                        </button>
+                                </div>
+                                <div class="mt-2.5 flex items-center gap-3 min-w-0">
+                                    <div
+                                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-blue-700 shadow-inner dark:bg-blue-950/60 dark:text-blue-400"
+                                    >
+                                        <School class="h-5 w-5" />
                                     </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    <h3 class="font-bold text-sm text-slate-800 truncate dark:text-slate-100" :title="s.nama_sekolah">
+                                        {{ s.nama_sekolah }}
+                                    </h3>
+                                </div>
+                                <div
+                                    v-if="s.alamat_sekolah || s.alamat || s.website"
+                                    class="mt-2.5 space-y-0.5 text-xs text-slate-500 dark:text-slate-400"
+                                >
+                                    <p v-if="s.alamat_sekolah || s.alamat" class="truncate text-[11px]" :title="s.alamat_sekolah ?? s.alamat ?? ''">
+                                        {{ s.alamat_sekolah ?? s.alamat }}
+                                    </p>
+                                    <a
+                                        v-if="s.website"
+                                        :href="s.website"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-block truncate text-[11px] text-blue-600 hover:underline dark:text-blue-400 max-w-full"
+                                    >
+                                        {{ s.website }}
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Bottom: Actions -->
+                            <div class="mt-4 flex items-center justify-end gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800/80">
+                                <button
+                                    type="button"
+                                    title="Edit Sekolah"
+                                    class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-blue-400 transition"
+                                    @click="bukaEditSekolah(s)"
+                                >
+                                    <Pencil class="h-3.5 w-3.5" />
+                                    <span>Edit</span>
+                                </button>
+                                <button
+                                    v-if="s.is_active"
+                                    type="button"
+                                    title="Hapus Sekolah"
+                                    class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-red-200/80 bg-red-50/50 px-2.5 py-1 text-xs font-medium text-red-600 shadow-2xs hover:bg-red-100 hover:text-red-700 hover:border-red-300 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50 transition"
+                                    @click="hapusSekolah(s)"
+                                >
+                                    <Power class="h-3.5 w-3.5" />
+                                    <span>Hapus</span>
+                                </button>
+                                <button
+                                    v-else
+                                    type="button"
+                                    title="Aktifkan Kembali"
+                                    class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-emerald-200/80 bg-emerald-50/50 px-2.5 py-1 text-xs font-medium text-emerald-600 shadow-2xs hover:bg-emerald-100 hover:text-emerald-700 hover:border-emerald-300 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 transition"
+                                    @click="aktifkanSekolah(s)"
+                                >
+                                    <RotateCcw class="h-3.5 w-3.5" />
+                                    <span>Aktifkan</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </template>
 
             <!-- Modal User -->
             <Modal
                 :open="showForm"
-                :title="editing ? 'Edit User' : 'Tambah User'"
+                :title="editing ? 'Edit Data Pengguna' : 'Tambah Pengguna Baru'"
                 @close="showForm = false"
             >
-                <form class="space-y-2.5" @submit.prevent="simpan">
-                    <label class="text-xs font-medium text-slate-600"
-                        >Nama lengkap*
+                <form class="space-y-3" @submit.prevent="simpan">
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >Nama Lengkap Pengguna*
                         <input
                             v-model="form.nama_lengkap"
                             required
-                            class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                            placeholder="Contoh: Ahmad Kasir / Siti Admin"
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </label>
-                    <label class="text-xs font-medium text-slate-600"
-                        >Username*{{ editing ? ' (tidak dapat diubah)' : '' }}
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >Username Akun*{{ editing ? ' (tidak dapat diubah)' : '' }}
                         <input
                             v-model="form.username"
                             required
                             :disabled="!!editing"
-                            class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm disabled:bg-slate-50"
+                            placeholder="Contoh: kasir01, admin_utama"
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 disabled:bg-slate-50 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/50"
                         />
                     </label>
-                    <label class="text-xs font-medium text-slate-600"
-                        >Password{{
-                            editing ? ' (kosongkan jika tidak diubah)' : '*'
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >Kata Sandi{{
+                            editing ? ' (kosongkan jika tidak ingin diubah)' : '*'
                         }}
                         <input
                             v-model="form.password"
                             type="password"
                             :required="!editing"
                             minlength="6"
-                            class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                            placeholder="Minimal 6 karakter"
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </label>
-                    <label class="text-xs font-medium text-slate-600"
-                        >Role*
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >Hak Akses / Peran*
                         <select
                             v-model="form.id_role"
-                            class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         >
                             <option
                                 v-for="r in roles"
@@ -577,21 +595,21 @@ watch(
                         </select>
                     </label>
                     <label
-                        class="flex items-center gap-2 text-sm text-slate-600"
+                        class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer"
                     >
                         <input
                             v-model="form.is_active"
                             type="checkbox"
-                            class="h-4 w-4 accent-blue-700"
+                            class="h-4 w-4 rounded accent-blue-700 cursor-pointer"
                         />
-                        Aktif
+                        Status Akun Aktif
                     </label>
                     <button
                         type="submit"
                         :disabled="saving"
-                        class="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                        class="w-full cursor-pointer rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition disabled:opacity-60 shadow-xs"
                     >
-                        Simpan
+                        {{ saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : 'Simpan Pengguna' }}
                     </button>
                 </form>
             </Modal>
@@ -599,118 +617,119 @@ watch(
             <!-- Modal Sekolah -->
             <Modal
                 :open="showFormSekolah"
-                :title="editingSekolah ? 'Edit Sekolah' : 'Tambah Sekolah'"
+                :title="editingSekolah ? 'Edit Data Sekolah' : 'Tambah Instansi Sekolah Baru'"
                 @close="showFormSekolah = false"
             >
-                <form class="space-y-2.5" @submit.prevent="simpanSekolah">
+                <form class="space-y-3" @submit.prevent="simpanSekolah">
                     <div class="grid gap-2.5 sm:grid-cols-2">
-                        <label class="text-xs font-medium text-slate-600"
-                            >Kode sekolah*
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Kode Sekolah*
                             <input
                                 v-model="formSekolah.kode_sekolah"
                                 required
                                 maxlength="20"
-                                placeholder="cth: SMKN005"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 font-mono text-sm uppercase"
+                                placeholder="Contoh: SMKN01"
+                                class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-mono text-sm uppercase text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                         </label>
-                        <label class="text-xs font-medium text-slate-600"
-                            >Nama sekolah*
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Nama Lengkap Sekolah*
                             <input
                                 v-model="formSekolah.nama_sekolah"
                                 required
                                 maxlength="150"
-                                placeholder="cth: SMKN 5 Tasikmalaya"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                                placeholder="Contoh: SMKN 1 Tasikmalaya"
+                                class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                         </label>
                     </div>
-                    <label class="text-xs font-medium text-slate-600"
-                        >Alamat sekolah
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >Alamat Lengkap Sekolah
                         <input
                             v-model="formSekolah.alamat_sekolah"
-                            placeholder="Jl. …"
-                            class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                            placeholder="Contoh: Jl. Merdeka No. 100, Kota Tasikmalaya"
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </label>
                     <div class="grid gap-2.5 sm:grid-cols-2">
-                        <label class="text-xs font-medium text-slate-600"
-                            >Website
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Website Resmi Sekolah
                             <input
                                 v-model="formSekolah.website"
                                 maxlength="200"
-                                placeholder="https://…"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                                placeholder="Contoh: https://smkn1tasik.sch.id"
+                                class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                         </label>
-                        <label class="text-xs font-medium text-slate-600"
-                            >Alamat singkat (opsional)
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Kota / Wilayah (Opsional)
                             <input
                                 v-model="formSekolah.alamat"
                                 maxlength="255"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                                placeholder="Contoh: Tasikmalaya"
+                                class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             />
                         </label>
                     </div>
                     <label
-                        class="flex items-center gap-2 text-sm text-slate-600"
+                        class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer"
                     >
                         <input
                             v-model="formSekolah.is_active"
                             type="checkbox"
-                            class="h-4 w-4 accent-blue-700"
+                            class="h-4 w-4 rounded accent-blue-700 cursor-pointer"
                         />
-                        Aktif
+                        Status Instansi Aktif
                     </label>
 
                     <div
                         v-if="!editingSekolah"
-                        class="rounded-xl border border-blue-100 bg-blue-50/50 p-3"
+                        class="rounded-2xl border border-blue-100 bg-blue-50/50 p-3.5 dark:border-blue-900/50 dark:bg-blue-950/30"
                     >
                         <label
-                            class="flex items-center gap-2 text-sm font-semibold text-slate-700"
+                            class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
                         >
                             <input
                                 v-model="buatAkun"
                                 type="checkbox"
-                                class="h-4 w-4 accent-blue-700"
+                                class="h-4 w-4 rounded accent-blue-700 cursor-pointer"
                             />
-                            Buatkan akun super admin untuk sekolah ini
+                            Buatkan Akun Super Admin untuk Instansi Ini
                         </label>
                         <div v-if="buatAkun" class="mt-2.5 space-y-2.5">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Nama super admin*
+                            <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                                >Nama Lengkap Super Admin*
                                 <input
                                     v-model="akun.nama_lengkap"
                                     :required="buatAkun"
-                                    placeholder="cth: SuperAdmin SMKN 5"
-                                    class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                                    placeholder="Contoh: SuperAdmin SMKN 1"
+                                    class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                                 />
                             </label>
                             <div class="grid gap-2.5 sm:grid-cols-2">
-                                <label class="text-xs font-medium text-slate-600"
-                                    >Username*
+                                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                                    >Username Super Admin*
                                     <input
                                         v-model="akun.username"
                                         :required="buatAkun"
-                                        placeholder="cth: admin-smkn5"
-                                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                                        placeholder="Contoh: admin_smkn1"
+                                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                                     />
                                 </label>
-                                <label class="text-xs font-medium text-slate-600"
-                                    >Password* (min 6)
+                                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                                    >Kata Sandi Super Admin* (min. 6 karakter)
                                     <input
                                         v-model="akun.password"
                                         type="password"
                                         :required="buatAkun"
                                         minlength="6"
-                                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                                        placeholder="Minimal 6 karakter"
+                                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                                     />
                                 </label>
                             </div>
-                            <p class="text-[11px] text-slate-500">
-                                Akun ini berperan super admin dan langsung bisa login
-                                memakai aplikasi kasir untuk sekolah baru tersebut.
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                Akun ini berperan sebagai Super Admin dan langsung dapat digunakan untuk mengelola toko koperasi di sekolah tersebut.
                             </p>
                         </div>
                     </div>
@@ -718,9 +737,9 @@ watch(
                     <button
                         type="submit"
                         :disabled="savingSekolah"
-                        class="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                        class="w-full cursor-pointer rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition disabled:opacity-60 shadow-xs"
                     >
-                        Simpan
+                        {{ savingSekolah ? 'Menyimpan…' : editingSekolah ? 'Simpan Perubahan' : 'Simpan Data Sekolah' }}
                     </button>
                 </form>
             </Modal>

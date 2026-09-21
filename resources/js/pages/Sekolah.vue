@@ -45,7 +45,7 @@ async function load() {
     try {
         rows.value = await fetchSekolah(true);
     } catch (e) {
-        toast.error(friendlyError(e, 'Daftar sekolah gagal dimuat.'));
+        toast.error(friendlyError(e, 'Gagal memuat daftar instansi sekolah.'));
     } finally {
         loading.value = false;
     }
@@ -95,14 +95,12 @@ async function simpan() {
             toast.success(res.message);
         } else {
             const res = await createSekolah(payload);
-            // Opsional: langsung buatkan akun super admin untuk sekolah baru
-            // agar sekolah tersebut bisa login & memakai kasir.
             if (buatAkun.value) {
                 const superRole =
                     roles.value.find((r) => r.nama_role === 'super admin') ??
                     roles.value.find((r) => r.id_role === 1);
                 if (!superRole) {
-                    toast.error('Role super admin tidak ditemukan, akun super admin batal dibuat.');
+                    toast.error('Peran super admin tidak ditemukan, akun super admin batal dibuat.');
                 } else {
                     await createPosUser({
                         id_sekolah: res.data.id_sekolah,
@@ -125,7 +123,7 @@ async function simpan() {
         await pos.refreshSekolah();
     } catch (e) {
         toast.error(
-            friendlyError(e, 'Sekolah gagal disimpan. Silakan coba lagi.'),
+            friendlyError(e, 'Gagal menyimpan data sekolah. Silakan coba kembali.'),
         );
     } finally {
         saving.value = false;
@@ -133,14 +131,14 @@ async function simpan() {
 }
 
 async function nonaktifkan(s: Sekolah) {
-    if (!confirm(`Hapus permanen "${s.nama_sekolah}" beserta kodenya (${s.kode_sekolah})? Tindakan ini tidak bisa dibatalkan.`)) return;
+    if (!confirm(`Hapus data instansi sekolah "${s.nama_sekolah}" (${s.kode_sekolah})? Tindakan ini tidak dapat dibatalkan.`)) return;
     try {
         const res = await deleteSekolah(s.id_sekolah);
         toast.success(res.message);
         await load();
         await pos.refreshSekolah();
     } catch (e) {
-        toast.error(friendlyError(e, 'Sekolah gagal dihapus.'));
+        toast.error(friendlyError(e, 'Gagal menghapus data sekolah.'));
     }
 }
 
@@ -151,7 +149,7 @@ async function aktifkan(s: Sekolah) {
         await load();
         await pos.refreshSekolah();
     } catch (e) {
-        toast.error(friendlyError(e, 'Sekolah gagal diaktifkan.'));
+        toast.error(friendlyError(e, 'Gagal mengaktifkan kembali instansi sekolah.'));
     }
 }
 
@@ -165,51 +163,55 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Kelola Sekolah" />
+    <Head title="Manajemen Sekolah" />
     <PosLayout>
         <PageHeader
-            title="Kelola Sekolah"
+            title="Manajemen Sekolah"
             :icon="School"
-            subtitle="Tambah sekolah baru beserta akun super adminnya (khusus developer)"
+            subtitle="Kelola data instansi sekolah mitra dan akun super admin"
         >
             <template #actions>
                 <button
                     v-if="pos.can('sekolah')"
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800"
+                    class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800 shadow-xs dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambah"
                 >
-                    <Plus class="h-4 w-4" /> Tambah Sekolah
+                    <Plus class="h-4 w-4" /> Tambah Sekolah Baru
                 </button>
             </template>
         </PageHeader>
 
         <EmptyState
             v-if="!pos.loading && !pos.can('sekolah')"
-            title="Akses ditolak"
-            message="Halaman ini khusus peran Developer."
+            title="Akses Dibatasi"
+            message="Halaman ini memerlukan hak akses tingkat Developer."
         />
         <template v-else>
             <div v-if="loading" class="space-y-2">
                 <div
                     v-for="i in 4"
                     :key="i"
-                    class="h-16 animate-pulse rounded-xl bg-white"
+                    class="h-16 animate-pulse rounded-xl bg-white dark:bg-slate-900"
                 />
             </div>
-            <EmptyState v-else-if="rows.length === 0" title="Belum ada sekolah" />
+            <EmptyState
+                v-else-if="rows.length === 0"
+                title="Belum Ada Data Sekolah"
+                message="Belum ada data instansi sekolah yang terdaftar."
+            />
             <div
                 v-else
-                class="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
+                class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
             >
                 <table class="w-full min-w-170 text-left text-sm">
                     <thead>
                         <tr
-                            class="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase"
+                            class="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs text-slate-500 dark:text-slate-400 uppercase"
                         >
-                            <th class="px-4 py-3">Kode</th>
+                            <th class="px-4 py-3">Kode Sekolah</th>
                             <th class="px-4 py-3">Nama Sekolah</th>
-                            <th class="px-4 py-3">Alamat / Website</th>
+                            <th class="px-4 py-3">Alamat & Website</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3 text-right">Aksi</th>
                         </tr>
@@ -218,19 +220,19 @@ onMounted(() => {
                         <tr
                             v-for="s in rows"
                             :key="s.id_sekolah"
-                            class="border-b border-slate-50"
+                            class="border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                         >
-                            <td class="px-4 py-3 font-mono text-xs font-bold text-slate-600">
+                            <td class="px-4 py-3 font-mono text-xs font-bold text-slate-600 dark:text-slate-400">
                                 {{ s.kode_sekolah }}
                             </td>
-                            <td class="px-4 py-3 font-semibold">
+                            <td class="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
                                 {{ s.nama_sekolah }}
                             </td>
-                            <td class="max-w-60 px-4 py-3 text-slate-500">
+                            <td class="max-w-60 px-4 py-3 text-slate-500 dark:text-slate-400">
                                 <p class="truncate text-xs">
                                     {{ s.alamat_sekolah ?? s.alamat ?? '—' }}
                                 </p>
-                                <p class="truncate text-xs text-blue-600">
+                                <p class="truncate text-xs text-blue-600 dark:text-blue-400">
                                     {{ s.website ?? '' }}
                                 </p>
                             </td>
@@ -238,8 +240,8 @@ onMounted(() => {
                                 <span
                                     :class="
                                         s.is_active
-                                            ? 'bg-emerald-50 text-emerald-600'
-                                            : 'bg-slate-100 text-slate-500'
+                                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                                     "
                                     class="rounded-full px-2 py-0.5 text-xs font-semibold"
                                 >
@@ -250,8 +252,8 @@ onMounted(() => {
                                 <div class="flex justify-end gap-1">
                                     <button
                                         type="button"
-                                        title="Edit"
-                                        class="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700"
+                                        title="Edit Sekolah"
+                                        class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-blue-400 transition"
                                         @click="bukaEdit(s)"
                                     >
                                         <Pencil class="h-4 w-4" />
@@ -259,8 +261,8 @@ onMounted(() => {
                                     <button
                                         v-if="s.is_active"
                                         type="button"
-                                        title="Hapus permanen"
-                                        class="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                        title="Hapus Sekolah"
+                                        class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition"
                                         @click="nonaktifkan(s)"
                                     >
                                         <Power class="h-4 w-4" />
@@ -268,8 +270,8 @@ onMounted(() => {
                                     <button
                                         v-else
                                         type="button"
-                                        title="Aktifkan kembali"
-                                        class="rounded-lg p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
+                                        title="Aktifkan Kembali"
+                                        class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition"
                                         @click="aktifkan(s)"
                                     >
                                         <RotateCcw class="h-4 w-4" />
@@ -283,120 +285,120 @@ onMounted(() => {
 
             <Modal
                 :open="showForm"
-                :title="editing ? 'Edit Sekolah' : 'Tambah Sekolah'"
+                :title="editing ? 'Edit Data Sekolah' : 'Tambah Instansi Sekolah Baru'"
                 @close="showForm = false"
             >
                 <form class="space-y-2.5" @submit.prevent="simpan">
                     <div class="grid gap-2.5 sm:grid-cols-2">
-                        <label class="text-xs font-medium text-slate-600"
-                            >Kode sekolah*
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Kode Sekolah*
                             <input
                                 v-model="form.kode_sekolah"
                                 required
                                 maxlength="20"
-                                placeholder="cth: SMKN005"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 font-mono text-sm uppercase"
+                                placeholder="Contoh: SMKN01"
+                                class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 font-mono text-sm uppercase text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                             />
                         </label>
-                        <label class="text-xs font-medium text-slate-600"
-                            >Nama sekolah*
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Nama Lengkap Sekolah*
                             <input
                                 v-model="form.nama_sekolah"
                                 required
                                 maxlength="150"
-                                placeholder="cth: SMKN 5 Tasikmalaya"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                                placeholder="Contoh: SMKN 1 Tasikmalaya"
+                                class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                             />
                         </label>
                     </div>
-                    <label class="text-xs font-medium text-slate-600"
-                        >Alamat sekolah
+                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                        >Alamat Lengkap Sekolah
                         <input
                             v-model="form.alamat_sekolah"
-                            placeholder="Jl. …"
-                            class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                            placeholder="Contoh: Jl. Merdeka No. 100, Kota Tasikmalaya"
+                            class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                     </label>
                     <div class="grid gap-2.5 sm:grid-cols-2">
-                        <label class="text-xs font-medium text-slate-600"
-                            >Website
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Website Resmi Sekolah
                             <input
                                 v-model="form.website"
                                 maxlength="200"
-                                placeholder="https://…"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                                placeholder="Contoh: https://smkn1tasik.sch.id"
+                                class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                             />
                         </label>
-                        <label class="text-xs font-medium text-slate-600"
-                            >Alamat singkat (opsional)
+                        <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                            >Kota / Wilayah (Opsional)
                             <input
                                 v-model="form.alamat"
                                 maxlength="255"
-                                class="mt-1 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                                placeholder="Contoh: Tasikmalaya"
+                                class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                             />
                         </label>
                     </div>
                     <label
-                        class="flex items-center gap-2 text-sm text-slate-600"
+                        class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer"
                     >
                         <input
                             v-model="form.is_active"
                             type="checkbox"
-                            class="h-4 w-4 accent-blue-700"
+                            class="h-4 w-4 accent-blue-700 dark:accent-blue-500 cursor-pointer"
                         />
-                        Aktif
+                        Status Instansi Aktif
                     </label>
 
                     <!-- Akun super admin awal: hanya saat tambah sekolah baru -->
                     <div
                         v-if="!editing"
-                        class="rounded-xl border border-blue-100 bg-blue-50/50 p-3"
+                        class="rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/40 dark:bg-blue-950/20"
                     >
                         <label
-                            class="flex items-center gap-2 text-sm font-semibold text-slate-700"
+                            class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
                         >
                             <input
                                 v-model="buatAkun"
                                 type="checkbox"
-                                class="h-4 w-4 accent-blue-700"
+                                class="h-4 w-4 accent-blue-700 dark:accent-blue-500 cursor-pointer"
                             />
-                            Buatkan akun super admin untuk sekolah ini
+                            Buatkan Akun Super Admin untuk Instansi Ini
                         </label>
                         <div v-if="buatAkun" class="mt-2.5 space-y-2.5">
-                            <label class="text-xs font-medium text-slate-600"
-                                >Nama super admin*
+                            <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                                >Nama Lengkap Super Admin*
                                 <input
                                     v-model="akun.nama_lengkap"
                                     :required="buatAkun"
-                                    placeholder="cth: SuperAdmin-smkn2"
-                                    class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                                    placeholder="Contoh: SuperAdmin SMKN 1"
+                                    class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                                 />
                             </label>
                             <div class="grid gap-2.5 sm:grid-cols-2">
-                                <label class="text-xs font-medium text-slate-600"
-                                    >Username*
+                                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                                    >Username Super Admin*
                                     <input
                                         v-model="akun.username"
                                         :required="buatAkun"
-                                        placeholder="cth: super admin SMKN 2 TASIKMALAYA"
-                                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                                        placeholder="Contoh: admin_smkn1"
+                                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                                     />
                                 </label>
-                                <label class="text-xs font-medium text-slate-600"
-                                    >Password* (min 6)
+                                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                                    >Kata Sandi Super Admin* (min. 6 karakter)
                                     <input
                                         v-model="akun.password"
                                         type="password"
                                         :required="buatAkun"
                                         minlength="6"
-                                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+                                        placeholder="Minimal 6 karakter"
+                                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
                                     />
                                 </label>
                             </div>
-                            <p class="text-[11px] text-slate-500">
-                                Akun ini berperan super admin dan langsung bisa login
-                                memakai aplikasi kasir untuk sekolah baru
-                                tersebut.
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                Akun ini berperan sebagai Super Admin dan langsung dapat digunakan untuk mengelola toko koperasi di sekolah tersebut.
                             </p>
                         </div>
                     </div>
@@ -404,9 +406,9 @@ onMounted(() => {
                     <button
                         type="submit"
                         :disabled="saving"
-                        class="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                        class="w-full cursor-pointer rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-500 transition shadow-xs"
                     >
-                        Simpan
+                        {{ saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : 'Simpan Data Sekolah' }}
                     </button>
                 </form>
             </Modal>

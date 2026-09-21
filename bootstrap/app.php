@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Percayai semua reverse proxy / tunnel (localtunnel, ngrok, cloudflared, SSL proxy)
+        // agar asset Vite dan URL halaman otomatis menggunakan host & HTTPS dari proxy.
+        $middleware->trustProxies(at: '*');
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         // User yang sudah login dan membuka halaman tamu (login/register)

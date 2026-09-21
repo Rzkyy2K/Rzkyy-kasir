@@ -46,7 +46,7 @@ async function load() {
             total.value = res.data.total ?? 0;
         }
     } catch (e) {
-        toast.error(friendlyError(e, 'Laporan gagal dimuat.'));
+        toast.error(friendlyError(e, 'Gagal memuat data laporan.'));
     } finally {
         loading.value = false;
     }
@@ -54,11 +54,11 @@ async function load() {
 
 const judulKolom = computed(() => {
     if (tab.value === 'penjualan')
-        return ['Tanggal', 'Kasir', 'Cara Bayar', 'Total'];
+        return ['Tanggal Transaksi', 'Petugas Kasir', 'Metode Pembayaran', 'Total Penjualan'];
     if (tab.value === 'pembelian')
-        return ['Faktur', 'Supplier', 'Tanggal', 'Total'];
-    if (tab.value === 'stok') return ['Barang', 'Harga Jual', 'Stok'];
-    return ['Barang', 'Terjual', 'Omzet'];
+        return ['No. Faktur', 'Pemasok (Supplier)', 'Tanggal Faktur', 'Total Pembelian'];
+    if (tab.value === 'stok') return ['Nama Produk', 'Harga Jual', 'Sisa Stok'];
+    return ['Nama Produk', 'Total Terjual', 'Total Omzet'];
 });
 
 function cell(row: any, i: number): string {
@@ -122,15 +122,15 @@ watch([tab, () => pos.idSekolah], load);
         <PageHeader
             title="Laporan"
             :icon="BarChart3"
-            subtitle="Rekap penjualan, pembelian, stok, dan produk terlaris"
+            subtitle="Analisis dan rekapitulasi data penjualan, pengadaan, stok, serta produk terlaris"
         >
             <template #actions>
                 <button
                     type="button"
-                    class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:border-blue-300"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition"
                     @click="exportCsv"
                 >
-                    <Download class="h-4 w-4" /> Export CSV
+                    <Download class="h-4 w-4" /> Ekspor CSV
                 </button>
             </template>
         </PageHeader>
@@ -141,10 +141,10 @@ watch([tab, () => pos.idSekolah], load);
                 :key="t.key"
                 type="button"
                 :class="[
-                    'shrink-0 rounded-full border px-4 py-2 text-sm font-medium',
+                    'shrink-0 cursor-pointer rounded-full border px-4 py-2 text-sm font-semibold transition',
                     tab === t.key
-                        ? 'border-blue-700 bg-blue-700 text-white'
-                        : 'border-slate-200 bg-white text-slate-600',
+                        ? 'border-blue-700 bg-blue-700 text-white shadow-xs dark:border-blue-600 dark:bg-blue-600'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
                 ]"
                 @click="tab = t.key"
             >
@@ -156,28 +156,28 @@ watch([tab, () => pos.idSekolah], load);
             v-if="tab === 'penjualan' || tab === 'pembelian'"
             class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end"
         >
-            <label class="text-xs text-slate-500"
-                >Dari
+            <label class="text-xs text-slate-500 dark:text-slate-400"
+                >Dari Tanggal
                 <input
                     v-model="dari"
                     type="date"
-                    class="mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    class="mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                 />
             </label>
-            <label class="text-xs text-slate-500"
-                >Sampai
+            <label class="text-xs text-slate-500 dark:text-slate-400"
+                >Sampai Tanggal
                 <input
                     v-model="sampai"
                     type="date"
-                    class="mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    class="mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                 />
             </label>
             <button
                 type="button"
-                class="rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white"
+                class="cursor-pointer rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs"
                 @click="load"
             >
-                Tampilkan
+                Tampilkan Laporan
             </button>
         </div>
 
@@ -185,15 +185,15 @@ watch([tab, () => pos.idSekolah], load);
             v-if="ringkasan && (tab === 'penjualan' || tab === 'pembelian')"
             class="mt-4 grid grid-cols-2 gap-4"
         >
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Total Transaksi</p>
-                <p class="text-xl font-bold">{{ ringkasan.total_transaksi }}</p>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Transaksi</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-white">{{ ringkasan.total_transaksi }}</p>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">
-                    {{ tab === 'penjualan' ? 'Total Omzet' : 'Total Belanja' }}
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">
+                    {{ tab === 'penjualan' ? 'Total Omzet Penjualan' : 'Total Belanja Pengadaan' }}
                 </p>
-                <p class="text-xl font-bold text-blue-800">
+                <p class="text-xl font-bold text-blue-800 dark:text-blue-400">
                     {{
                         rupiah(ringkasan.total_omzet ?? ringkasan.total_belanja)
                     }}
@@ -205,13 +205,13 @@ watch([tab, () => pos.idSekolah], load);
             v-if="ringkasan && tab === 'stok'"
             class="mt-4 grid grid-cols-2 gap-4"
         >
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Total Item</p>
-                <p class="text-xl font-bold">{{ ringkasan.total_item }}</p>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Jenis Produk</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-white">{{ ringkasan.total_item }}</p>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <p class="text-xs text-slate-500 uppercase">Total Stok</p>
-                <p class="text-xl font-bold text-blue-800">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Fisik Stok</p>
+                <p class="text-xl font-bold text-blue-800 dark:text-blue-400">
                     {{ ringkasan.total_stok }}
                 </p>
             </div>
@@ -221,30 +221,30 @@ watch([tab, () => pos.idSekolah], load);
             <div
                 v-for="i in 5"
                 :key="i"
-                class="h-12 animate-pulse rounded-xl bg-white"
+                class="h-12 animate-pulse rounded-xl bg-white dark:bg-slate-900"
             />
         </div>
         <EmptyState
             v-else-if="rows.length === 0"
             class="mt-4"
-            title="Belum ada data laporan"
-            message="Ubah periode atau tab laporan."
+            title="Belum Ada Data Laporan"
+            message="Tidak ditemukan data transaksi pada periode atau kategori yang dipilih."
         />
         <div
             v-else
-            class="mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white"
+            class="mt-4 overflow-x-auto rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
         >
             <table class="w-full min-w-150 text-left text-sm">
                 <thead>
                     <tr
-                        class="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase"
+                        class="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-400"
                     >
                         <th
-                            v-for="h in judulKolom"
+                            v-for="(h, i) in judulKolom"
                             :key="h"
                             class="px-4 py-3"
                             :class="{
-                                'text-right': h === 'Total' || h === 'Omzet',
+                                'text-right': i === judulKolom.length - 1,
                             }"
                         >
                             {{ h }}
@@ -255,14 +255,14 @@ watch([tab, () => pos.idSekolah], load);
                     <tr
                         v-for="(r, ri) in rows"
                         :key="ri"
-                        class="border-b border-slate-50"
+                        class="border-b border-slate-50 hover:bg-slate-50/80 dark:border-slate-800/60 dark:hover:bg-slate-800/50 dark:text-slate-200"
                     >
                         <td
                             v-for="(_, i) in judulKolom"
                             :key="i"
                             class="px-4 py-3"
                             :class="{
-                                'text-right font-semibold':
+                                'text-right font-semibold text-slate-900 dark:text-white':
                                     i === judulKolom.length - 1,
                             }"
                         >
@@ -271,8 +271,8 @@ watch([tab, () => pos.idSekolah], load);
                     </tr>
                 </tbody>
             </table>
-            <p class="px-4 py-2 text-xs text-slate-400">
-                Menampilkan {{ rows.length }} dari {{ total }} data
+            <p class="px-4 py-2 text-xs text-slate-400 dark:text-slate-500">
+                Menampilkan {{ rows.length }} dari {{ total }} data laporan
             </p>
         </div>
     </PosLayout>

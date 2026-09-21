@@ -51,7 +51,7 @@ async function load() {
                 kelompok.value.some((kk) => kk.id_kelompok === k.id_kelompok),
         );
     } catch (e) {
-        toast.error(friendlyError(e, 'Data kategori gagal dimuat.'));
+        toast.error(friendlyError(e, 'Gagal memuat data kategori.'));
     } finally {
         loading.value = false;
     }
@@ -59,7 +59,7 @@ async function load() {
 
 async function simpanKelompok() {
     if (!namaKelompok.value.trim()) {
-        toast.error('Nama kelompok wajib diisi.');
+        toast.error('Nama kelompok kategori wajib diisi.');
         return;
     }
     saving.value = true;
@@ -80,7 +80,7 @@ async function simpanKelompok() {
         batalEditKelompok();
         await load();
     } catch (e) {
-        toast.error(friendlyError(e, 'Kelompok gagal disimpan.'));
+        toast.error(friendlyError(e, 'Gagal menyimpan kelompok kategori.'));
     } finally {
         saving.value = false;
     }
@@ -97,7 +97,7 @@ function batalEditKelompok() {
 }
 
 async function hapusKelompok(k: KelompokKategori) {
-    if (!confirm(`Hapus kelompok "${k.nama_kelompok}"?`)) return;
+    if (!confirm(`Hapus kelompok kategori "${k.nama_kelompok}"?`)) return;
     try {
         const res = await deleteKelompokKategori(k.id_kelompok);
         toast.success(res.message);
@@ -112,7 +112,7 @@ async function hapusKelompok(k: KelompokKategori) {
         if (info && (info.total ?? 0) > 0) {
             bukaPindahKelompok(k, info);
         } else {
-            toast.error(friendlyError(e, 'Kelompok gagal dihapus.'));
+            toast.error(friendlyError(e, 'Gagal menghapus kelompok kategori.'));
         }
     }
 }
@@ -134,7 +134,7 @@ function bukaPindahKelompok(k: KelompokKategori, info: Record<string, number>) {
 
 async function eksekusiPindah() {
     if (!pindahKelompok.value || !pindahTujuan.value) {
-        toast.error('Pilih kelompok tujuan terlebih dahulu.');
+        toast.error('Silakan pilih kelompok tujuan pemindahan terlebih dahulu.');
         return;
     }
     pindahLoading.value = true;
@@ -150,7 +150,7 @@ async function eksekusiPindah() {
             filterKelompok.value = null;
         await load();
     } catch (e) {
-        toast.error(friendlyError(e, 'Pemindahan gagal. Silakan coba lagi.'));
+        toast.error(friendlyError(e, 'Gagal memindahkan data ke kelompok tujuan. Silakan coba kembali.'));
     } finally {
         pindahLoading.value = false;
     }
@@ -170,7 +170,7 @@ function bukaEdit(k: Kategori) {
 
 async function simpan() {
     if (!form.value.id_kelompok) {
-        toast.error('Pilih kelompok kategori.');
+        toast.error('Silakan pilih kelompok kategori.');
         return;
     }
     saving.value = true;
@@ -188,20 +188,20 @@ async function simpan() {
         showForm.value = false;
         await load();
     } catch (e) {
-        toast.error(friendlyError(e, 'Kategori gagal disimpan.'));
+        toast.error(friendlyError(e, 'Gagal menyimpan kategori.'));
     } finally {
         saving.value = false;
     }
 }
 
 async function hapus(k: Kategori) {
-    if (!confirm(`Hapus permanen kategori "${k.nama}"? Data & kode akan hilang dan bisa dipakai lagi.`)) return;
+    if (!confirm(`Hapus permanen kategori "${k.nama}"? Kategori yang dihapus tidak dapat dipulihkan kembali.`)) return;
     try {
         const res = await deleteKategori(k.id_kategori);
         toast.success(res.message ?? 'Kategori berhasil dihapus.');
         await load();
     } catch (e) {
-        toast.error(friendlyError(e, 'Kategori gagal dihapus.'));
+        toast.error(friendlyError(e, 'Gagal menghapus kategori.'));
     }
 }
 
@@ -219,22 +219,22 @@ onMounted(() => {
         <PageHeader
             title="Kategori & Kelompok"
             :icon="Tags"
-            subtitle="Data berasal dari API/database"
+            subtitle="Struktur klasifikasi dan pengelompokan produk koperasi"
         >
             <template #actions>
                 <button
                     type="button"
-                    class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold hover:border-blue-300"
+                    class="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition"
                     @click="showKelompok = true"
                 >
-                    Kelola Kelompok
+                    Kelola Kelompok Kategori
                 </button>
                 <button
                     type="button"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-800"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambah"
                 >
-                    <Plus class="h-4 w-4" /> Tambah Kategori
+                    <Plus class="h-4 w-4" /> Tambah Kategori Baru
                 </button>
             </template>
         </PageHeader>
@@ -243,7 +243,7 @@ onMounted(() => {
             <div
                 v-for="i in 4"
                 :key="i"
-                class="h-16 animate-pulse rounded-xl bg-white"
+                class="h-16 animate-pulse rounded-xl bg-white dark:bg-slate-900"
             />
         </div>
         <template v-else>
@@ -251,10 +251,10 @@ onMounted(() => {
                 <button
                     type="button"
                     :class="[
-                        'shrink-0 rounded-full border px-4 py-2 text-sm font-medium',
+                        'shrink-0 cursor-pointer rounded-full border px-4 py-2 text-sm font-semibold transition',
                         filterKelompok === null
-                            ? 'border-blue-700 bg-blue-700 text-white'
-                            : 'border-slate-200 bg-white',
+                            ? 'border-blue-700 bg-blue-700 text-white shadow-xs dark:border-blue-600 dark:bg-blue-600'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
                     ]"
                     @click="filterKelompok = null"
                 >
@@ -265,10 +265,10 @@ onMounted(() => {
                     :key="k.id_kelompok"
                     type="button"
                     :class="[
-                        'shrink-0 rounded-full border px-4 py-2 text-sm font-medium',
+                        'shrink-0 cursor-pointer rounded-full border px-4 py-2 text-sm font-semibold transition',
                         filterKelompok === k.id_kelompok
-                            ? 'border-blue-700 bg-blue-700 text-white'
-                            : 'border-slate-200 bg-white',
+                            ? 'border-blue-700 bg-blue-700 text-white shadow-xs dark:border-blue-600 dark:bg-blue-600'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
                     ]"
                     @click="filterKelompok = k.id_kelompok"
                 >
@@ -279,17 +279,18 @@ onMounted(() => {
             <EmptyState
                 v-if="tampil.length === 0"
                 class="mt-4"
-                title="Belum ada kategori"
+                title="Belum Ada Kategori"
+                message="Belum ada data kategori produk dalam kelompok ini."
             />
             <div v-else class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div
                     v-for="k in tampil"
                     :key="k.id_kategori"
-                    class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4"
+                    class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900"
                 >
                     <div>
-                        <p class="font-semibold text-slate-800">{{ k.nama }}</p>
-                        <p class="text-xs text-slate-400">
+                        <p class="font-semibold text-slate-800 dark:text-slate-100">{{ k.nama }}</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500">
                             {{
                                 k.kelompok?.nama_kelompok ??
                                 kelompok.find(
@@ -301,14 +302,16 @@ onMounted(() => {
                     <div class="flex gap-1">
                         <button
                             type="button"
-                            class="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700"
+                            title="Edit Kategori"
+                            class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-blue-400 transition"
                             @click="bukaEdit(k)"
                         >
                             <Pencil class="h-4 w-4" />
                         </button>
                         <button
                             type="button"
-                            class="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            title="Hapus Kategori"
+                            class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-red-400 transition"
                             @click="hapus(k)"
                         >
                             <Trash2 class="h-4 w-4" />
@@ -324,29 +327,29 @@ onMounted(() => {
             @close="showKelompok = false"
         >
             <form class="space-y-2.5" @submit.prevent="simpanKelompok">
-                <label class="text-xs font-medium text-slate-600"
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
                     >{{
                         editingKelompok
-                            ? 'Ubah nama kelompok*'
-                            : 'Nama kelompok baru*'
+                            ? 'Ubah Nama Kelompok*'
+                            : 'Nama Kelompok Baru*'
                     }}
                     <div class="mt-1 flex gap-1.5">
                         <input
                             v-model="namaKelompok"
                             required
-                            placeholder="cth: Alat Tulis"
-                            class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            placeholder="Contoh: Alat Tulis, Makanan, Minuman"
+                            class="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         />
                         <button
                             type="submit"
                             :disabled="saving"
-                            class="shrink-0 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+                            class="shrink-0 cursor-pointer rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition disabled:opacity-60 shadow-xs"
                         >
                             {{
                                 saving
                                     ? '…'
                                     : editingKelompok
-                                      ? 'Ubah'
+                                      ? 'Simpan Perubahan'
                                       : '+ Tambah'
                             }}
                         </button>
@@ -355,34 +358,35 @@ onMounted(() => {
                 <button
                     v-if="editingKelompok"
                     type="button"
-                    class="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                    class="cursor-pointer text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                     @click="batalEditKelompok"
                 >
-                    Batalkan ubahan
+                    Batal Edit
                 </button>
             </form>
 
             <div class="mt-4 space-y-2">
-                <p class="text-xs font-medium text-slate-500 uppercase">
-                    Daftar kelompok ({{ kelompok.length }})
+                <p class="text-xs font-medium text-slate-500 uppercase dark:text-slate-400">
+                    Daftar Kelompok Kategori ({{ kelompok.length }})
                 </p>
                 <EmptyState
                     v-if="kelompok.length === 0"
-                    title="Belum ada kelompok"
+                    title="Belum Ada Kelompok Kategori"
+                    message="Tambahkan kelompok kategori baru pada formulir di atas."
                 />
                 <div
                     v-for="k in kelompok"
                     :key="k.id_kelompok"
-                    class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                    class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50"
                 >
-                    <p class="text-sm font-semibold text-slate-700">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">
                         {{ k.nama_kelompok }}
                     </p>
                     <div class="flex gap-1">
                         <button
                             type="button"
-                            title="Ubah"
-                            class="rounded-lg p-2 text-slate-400 hover:bg-blue-100 hover:text-blue-700"
+                            title="Edit"
+                            class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-blue-100 hover:text-blue-700 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-blue-400 transition"
                             @click="bukaEditKelompok(k)"
                         >
                             <Pencil class="h-4 w-4" />
@@ -390,16 +394,15 @@ onMounted(() => {
                         <button
                             type="button"
                             title="Hapus"
-                            class="rounded-lg p-2 text-slate-400 hover:bg-red-100 hover:text-red-600"
+                            class="cursor-pointer rounded-lg p-2 text-slate-400 hover:bg-red-100 hover:text-red-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-red-400 transition"
                             @click="hapusKelompok(k)"
                         >
                             <Trash2 class="h-4 w-4" />
                         </button>
                     </div>
                 </div>
-                <p class="text-[11px] text-slate-400">
-                    Kelompok yang masih dipakai kategori/barang tidak dapat
-                    dihapus langsung — pindahkan dulu datanya.
+                <p class="text-[11px] text-slate-400 dark:text-slate-500">
+                    Kelompok yang masih memiliki kategori atau produk terkait tidak dapat langsung dihapus. Silakan pindahkan datanya terlebih dahulu.
                 </p>
             </div>
         </Modal>
@@ -409,10 +412,10 @@ onMounted(() => {
             title="Pindahkan & Hapus Kelompok"
             @close="showPindah = false"
         >
-            <div class="space-y-3 text-sm text-slate-600">
+            <div class="space-y-3 text-sm text-slate-600 dark:text-slate-300">
                 <p>
                     Kelompok
-                    <strong class="text-slate-900">{{
+                    <strong class="text-slate-900 dark:text-white">{{
                         pindahKelompok?.nama_kelompok
                     }}</strong>
                     masih menahan data berikut (termasuk data nonaktif yang
@@ -425,11 +428,11 @@ onMounted(() => {
                         {{ pindahInfo.nonaktif }} data nonaktif
                     </li>
                 </ul>
-                <label class="block text-xs font-medium text-slate-600"
+                <label class="block text-xs font-medium text-slate-600 dark:text-slate-300"
                     >Pindahkan semua ke kelompok*
                     <select
                         v-model="pindahTujuan"
-                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     >
                         <option
                             v-for="k in kelompok.filter(
@@ -451,14 +454,14 @@ onMounted(() => {
                                 x.id_kelompok !== pindahKelompok?.id_kelompok,
                         ).length === 0
                     "
-                    class="rounded-xl bg-amber-50 p-3 text-xs text-amber-700"
+                    class="rounded-xl bg-amber-50 p-3 text-xs text-amber-700 dark:border dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300"
                 >
                     Buat kelompok lain terlebih dahulu sebelum memindahkan.
                 </p>
-                <div class="flex gap-1.5">
+                <div class="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <button
                         type="button"
-                        class="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold"
+                        class="flex-1 cursor-pointer rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
                         @click="showPindah = false"
                     >
                         Batal
@@ -466,7 +469,7 @@ onMounted(() => {
                     <button
                         type="button"
                         :disabled="pindahLoading || !pindahTujuan"
-                        class="flex-1 rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                        class="flex-1 cursor-pointer rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition disabled:opacity-60 shadow-xs"
                         @click="eksekusiPindah"
                     >
                         {{ pindahLoading ? 'Memproses…' : 'Pindahkan & Hapus' }}
@@ -477,16 +480,16 @@ onMounted(() => {
 
         <Modal
             :open="showForm"
-            :title="editing ? 'Edit Kategori' : 'Tambah Kategori'"
+            :title="editing ? 'Edit Kategori' : 'Tambah Kategori Baru'"
             @close="showForm = false"
         >
-            <form class="space-y-2.5" @submit.prevent="simpan">
-                <label class="text-xs font-medium text-slate-600"
-                    >Kelompok*
+            <form class="space-y-3" @submit.prevent="simpan">
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                    >Kelompok Kategori*
                     <select
                         v-model="form.id_kelompok"
                         required
-                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     >
                         <option
                             v-for="k in kelompok"
@@ -497,20 +500,21 @@ onMounted(() => {
                         </option>
                     </select>
                 </label>
-                <label class="text-xs font-medium text-slate-600"
-                    >Nama kategori*
+                <label class="text-xs font-medium text-slate-600 dark:text-slate-300"
+                    >Nama Kategori*
                     <input
                         v-model="form.nama"
                         required
-                        class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        placeholder="Contoh: Buku Tulis, Pulpen, Seragam"
+                        class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                 </label>
                 <button
                     type="submit"
                     :disabled="saving"
-                    class="w-full rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                    class="w-full cursor-pointer rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition disabled:opacity-60 shadow-xs"
                 >
-                    Simpan
+                    {{ saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : 'Simpan Kategori' }}
                 </button>
             </form>
         </Modal>

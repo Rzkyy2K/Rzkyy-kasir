@@ -10,8 +10,8 @@ import { store } from '@/routes/login';
 
 defineOptions({
     layout: {
-        title: 'Masuk ke EduMart',
-        description: 'Gunakan username dan password akun kasir Anda',
+        title: 'Masuk ke Scholify',
+        description: 'Masukkan nama pengguna dan kata sandi akun Anda',
     },
 });
 </script>
@@ -27,7 +27,7 @@ defineOptions({
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="username" class="text-slate-700">Username</Label>
+                <Label for="username" class="text-slate-700 dark:text-slate-300">Username</Label>
                 <Input
                     id="username"
                     type="text"
@@ -36,29 +36,29 @@ defineOptions({
                     autofocus
                     :tabindex="1"
                     autocomplete="username"
-                    placeholder="cth: kasir SMKN 2 TASIKMALAYA"
-                    class="bg-white"
+                    placeholder="Masukkan username Anda"
+                    class="bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <InputError :message="errors.username" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password" class="text-slate-700">Password</Label>
+                <Label for="password" class="text-slate-700 dark:text-slate-300">Password</Label>
                 <PasswordInput
                     id="password"
                     name="password"
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Password"
-                    class="bg-white"
+                    placeholder="Masukkan kata sandi"
+                    class="bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <Button
                 type="submit"
-                class="mt-4 w-full rounded-xl bg-blue-700 py-2.5 hover:bg-blue-800"
+                class="mt-4 w-full rounded-xl bg-blue-700 py-2.5 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
                 :tabindex="3"
                 :disabled="processing"
                 data-test="login-button"
@@ -68,9 +68,8 @@ defineOptions({
             </Button>
         </div>
 
-        <p class="text-muted-foreground text-center text-xs">
-            Akun dibuat oleh admin — hubungi admin sekolah jika belum punya
-            akun.
+        <p class="text-muted-foreground dark:text-slate-400 text-center text-xs">
+            Akun dikelola oleh administrator sekolah. Hubungi pihak sekolah jika membutuhkan bantuan akses.
         </p>
     </Form>
 </template>

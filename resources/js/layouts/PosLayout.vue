@@ -8,36 +8,87 @@ import {
     Boxes,
     CheckCircle,
     ChevronsUpDown,
-    KeyRound,
     LayoutDashboard,
     LogOut,
     Menu,
+    Moon,
     ReceiptText,
     RefreshCw,
     Settings,
     ShoppingBag,
     ShoppingCart,
     Store,
+    Sun,
     Tags,
     Truck,
     Users,
     X,
+    MessageCircle,
+    ShieldAlert,
+    ExternalLink,
+    Sparkles,
 } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Toaster } from '@/components/ui/sonner';
 import BottomNav from '@/components/pos/BottomNav.vue';
+import { useAppearance } from '@/composables/useAppearance';
 import { getInitials } from '@/composables/useInitials';
-import { fetchBarang } from '@/services/barangService';
+import { rupiah } from '@/lib/format';
+import { fetchBarang, fetchPrediksiStok } from '@/services/barangService';
+import { fetchPendingVoidRequests } from '@/services/penjualanService';
 import { usePosStore } from '@/stores/pos';
-import type { Barang } from '@/types/pos';
+import type { Barang, Penjualan, PrediksiStokItem } from '@/types/pos';
 
 const pos = usePosStore();
+const { appearance, resolvedAppearance, updateAppearance } = useAppearance();
+const isDark = computed(() => resolvedAppearance.value === 'dark');
+
+function toggleDarkMode() {
+    updateAppearance(isDark.value ? 'light' : 'dark');
+}
 const sidebarOpen = ref(false);
 const showProfile = ref(false);
 const showNotification = ref(false);
 const notifDropdownRef = ref<HTMLElement | null>(null);
-const lowStockItems = ref<Barang[]>([]);
+const lowStockItems = ref<any[]>([]);
 const lowStockLoading = ref(false);
+const pendingVoidItems = ref<Penjualan[]>([]);
+const pendingVoidLoading = ref(false);
+
+const isSuperAdmin = computed(
+    () =>
+        pos.isSuper ||
+        pos.isDev ||
+        ['super admin', 'developer'].includes(pos.effectiveRole.toLowerCase()),
+);
+const isAdminRole = computed(
+    () => pos.effectiveRole.toLowerCase() === 'admin',
+);
+const hasVoidManagement = computed(
+    () => isAdminRole.value || isSuperAdmin.value,
+);
+
+const pendingForAdmin = computed(() =>
+    pendingVoidItems.value.filter((p) =>
+        ['pending_admin', 'pending'].includes(p.status_void ?? ''),
+    ),
+);
+
+const pendingForSuperAdmin = computed(() =>
+    pendingVoidItems.value.filter(
+        (p) => p.status_void === 'pending_super_admin',
+    ),
+);
+
+const myPendingVoids = computed(() => {
+    if (isAdminRole.value) return pendingForAdmin.value;
+    if (isSuperAdmin.value) return pendingForSuperAdmin.value;
+    return [];
+});
+
+const totalNotifCount = computed(() => {
+    return lowStockItems.value.length + myPendingVoids.value.length;
+});
 
 const profileInitials = computed(() =>
     getInitials(pos.me?.nama_lengkap ?? 'U')
@@ -80,7 +131,7 @@ const menus = [
     { key: 'supplier', label: 'Supplier', href: '/supplier', icon: Store },
     { key: 'pelanggan', label: 'Pelanggan', href: '/pelanggan', icon: Users },
     { key: 'laporan', label: 'Laporan', href: '/laporan', icon: BarChart3 },
-    { key: 'users', label: 'Manajemen User', href: '/users', icon: Users },
+    { key: 'users', label: 'Manajemen Pengguna', href: '/users', icon: Users },
     {
         key: 'pengaturan',
         label: 'Pengaturan',
@@ -96,13 +147,26 @@ async function loadLowStockAlert() {
     if (!pos.idSekolah) return;
     try {
         lowStockLoading.value = true;
-        const res = await fetchBarang({
-            id_sekolah: pos.idSekolah,
-            stok_rendah: 10,
-            is_active: true,
-            per_page: 50,
-        });
-        lowStockItems.value = res.data ?? [];
+        if (isAdminRole.value || isSuperAdmin.value) {
+            const predRes = await fetchPrediksiStok({
+                id_sekolah: pos.idSekolah,
+                days: 7,
+            });
+            lowStockItems.value = (predRes.items ?? []).filter(
+                (item) =>
+                    item.status === 'kritis' ||
+                    item.status === 'waspada' ||
+                    Number(item.stok) <= 10,
+            );
+        } else {
+            const res = await fetchBarang({
+                id_sekolah: pos.idSekolah,
+                stok_rendah: 10,
+                is_active: true,
+                per_page: 50,
+            });
+            lowStockItems.value = res.data ?? [];
+        }
     } catch {
         // silent fail in global layout
     } finally {
@@ -110,8 +174,58 @@ async function loadLowStockAlert() {
     }
 }
 
+async function loadPendingVoidsAlert() {
+    if (!pos.idSekolah || !hasVoidManagement.value) {
+        pendingVoidItems.value = [];
+        return;
+    }
+    try {
+        pendingVoidLoading.value = true;
+        const res = await fetchPendingVoidRequests(pos.idSekolah);
+        pendingVoidItems.value = res ?? [];
+    } catch {
+        // silent fail in global layout
+    } finally {
+        pendingVoidLoading.value = false;
+    }
+}
+
+async function refreshAllAlerts() {
+    await Promise.allSettled([loadLowStockAlert(), loadPendingVoidsAlert()]);
+}
+
 function handleStockChanged() {
     void loadLowStockAlert();
+}
+
+function handleVoidChanged() {
+    void loadPendingVoidsAlert();
+}
+
+function getWaUrl(phone: string | null | undefined, t: Penjualan): string {
+    if (!phone) return '#';
+    let clean = phone.replace(/[^0-9]/g, '');
+    if (clean.startsWith('0')) {
+        clean = '62' + clean.slice(1);
+    } else if (!clean.startsWith('62')) {
+        clean = '62' + clean;
+    }
+    let namaKasir =
+        t.void_requester?.nama_lengkap ||
+        t.kasir?.nama_lengkap ||
+        'Kasir';
+    if (
+        namaKasir.toLowerCase().includes('superadmin') ||
+        namaKasir.toLowerCase().includes('super admin')
+    ) {
+        namaKasir = `kasir_smkn${t.id_sekolah ?? '2'}`;
+    }
+    const namaSekolah =
+        t.sekolah?.nama_sekolah ||
+        pos.sekolahAktif?.nama_sekolah ||
+        'SMKN 2 Tasikmalaya';
+    const text = `Halo ${namaKasir}, saya dari Admin ${namaSekolah}. Terkait pengajuan pembatalan (void) Transaksi #${t.id_penjualan} senilai ${rupiah(t.total_faktur)} dengan alasan "${t.alasan_void ?? ''}", saya ingin cross-check apakah benar ada kesalahan input?`;
+    return `https://wa.me/${clean}?text=${encodeURIComponent(text)}`;
 }
 
 function handleClickOutside(e: MouseEvent) {
@@ -124,42 +238,75 @@ function handleClickOutside(e: MouseEvent) {
     }
 }
 
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
 watch(
     () => pos.idSekolah,
     (val) => {
-        if (val) void loadLowStockAlert();
+        if (val) {
+            void loadLowStockAlert();
+            void loadPendingVoidsAlert();
+        }
+    },
+);
+
+watch(
+    () => pos.effectiveRole,
+    () => {
+        if (hasVoidManagement.value) {
+            void loadPendingVoidsAlert();
+        } else {
+            pendingVoidItems.value = [];
+        }
     },
 );
 
 onMounted(() => {
     void pos.init().then(() => {
         void loadLowStockAlert();
+        void loadPendingVoidsAlert();
     });
     window.addEventListener('click', handleClickOutside);
     window.addEventListener('pos:stock-changed', handleStockChanged);
+    window.addEventListener('pos:void-changed', handleVoidChanged);
+    window.addEventListener('focus', () => {
+        if (hasVoidManagement.value) void loadPendingVoidsAlert();
+    });
+
+    pollInterval = setInterval(() => {
+        if (
+            hasVoidManagement.value &&
+            typeof document !== 'undefined' &&
+            document.visibilityState === 'visible'
+        ) {
+            void loadPendingVoidsAlert();
+        }
+    }, 15000);
 });
 
 onUnmounted(() => {
     window.removeEventListener('click', handleClickOutside);
     window.removeEventListener('pos:stock-changed', handleStockChanged);
+    window.removeEventListener('pos:void-changed', handleVoidChanged);
+    if (pollInterval) clearInterval(pollInterval);
 });
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-100 text-slate-900">
+    <div class="min-h-screen w-full overflow-x-hidden bg-slate-100 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
         <!-- Sidebar desktop -->
         <aside
-            class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-[#0f2a5c] text-white lg:flex"
+            class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-[#0f2a5c] text-white transition-colors duration-200 md:flex dark:border-r dark:border-slate-800/80 dark:bg-[#071328]"
         >
             <div class="flex items-center gap-2 px-5 pt-6 pb-4">
                 <img
-                    src="/logoEduMart.jpeg"
-                    alt="Logo EduMart"
-                    class="h-10 w-10 rounded-xl bg-white object-contain p-1"
+                    src="/logoScholify.png"
+                    alt="Logo Scholify"
+                    class="h-10 w-10 rounded-xl bg-white object-contain p-1 shadow-sm"
                 />
                 <div>
-                    <p class="text-base font-bold">EduMart</p>
-                    <p class="text-[11px] text-blue-200">Kasir Alat Sekolah</p>
+                    <p class="text-base font-bold tracking-tight">Scholify</p>
+                    <p class="text-[11px] text-blue-200 dark:text-blue-300/80">Smart School POS</p>
                 </div>
             </div>
             <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
@@ -178,8 +325,8 @@ onUnmounted(() => {
                         :class="[
                             'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
                             currentUrl.startsWith(m.href)
-                                ? 'bg-white text-[#0f2a5c] shadow'
-                                : 'text-blue-100 hover:bg-white/10',
+                                ? 'bg-white text-[#0f2a5c] shadow dark:bg-blue-600 dark:text-white'
+                                : 'text-blue-100 hover:bg-white/10 dark:hover:bg-white/5',
                         ]"
                     >
                         <component :is="m.icon" class="h-4.5 w-4.5 shrink-0" />
@@ -205,7 +352,7 @@ onUnmounted(() => {
                             >
                                 {{ pos.me?.nama_lengkap ?? 'Memuat…' }}
                             </p>
-                            <p class="truncate text-[11px] text-blue-200">
+                            <p class="truncate text-[11px] text-blue-200 dark:text-blue-300/80">
                                 {{
                                     pos.me?.sekolah?.nama_sekolah ??
                                     pos.sekolahAktif?.nama_sekolah ??
@@ -217,168 +364,228 @@ onUnmounted(() => {
                             class="h-4 w-4 shrink-0 text-blue-200"
                         />
                     </button>
-                    <div
-                        v-if="showProfile"
-                        class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+                    <Transition
+                        enter-active-class="transition duration-150 ease-out"
+                        enter-from-class="opacity-0 scale-95 translate-y-1"
+                        enter-to-class="opacity-100 scale-100 translate-y-0"
+                        leave-active-class="transition duration-100 ease-in"
+                        leave-from-class="opacity-100 scale-100 translate-y-0"
+                        leave-to-class="opacity-0 scale-95 translate-y-1"
                     >
-                        <button
-                            type="button"
-                            class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
-                            @click="
-                                showProfile = false;
-                                logout();
-                            "
+                        <div
+                            v-if="showProfile"
+                            class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
                         >
-                            <LogOut class="h-4 w-4" /> Logout
-                        </button>
-                    </div>
+                            <button
+                                type="button"
+                                class="flex w-full items-center justify-between border-b border-slate-100 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                                @click="toggleDarkMode"
+                            >
+                                <span class="flex items-center gap-2">
+                                    <Sun v-if="isDark" class="h-4 w-4 text-amber-400" />
+                                    <Moon v-else class="h-4 w-4 text-slate-500" />
+                                    Mode Tampilan
+                                </span>
+                                <span
+                                    class="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                                    :class="isDark ? 'bg-slate-800 text-amber-300' : 'bg-slate-100 text-slate-600'"
+                                >
+                                    {{ isDark ? 'Gelap' : 'Terang' }}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                                @click="
+                                    showProfile = false;
+                                    logout();
+                                "
+                            >
+                                <LogOut class="h-4 w-4" /> Keluar
+                            </button>
+                        </div>
+                    </Transition>
                 </div>
             </div>
         </aside>
 
         <!-- Drawer mobile -->
         <Teleport to="body">
-            <div v-if="sidebarOpen" class="fixed inset-0 z-50 lg:hidden">
-                <div
-                    class="absolute inset-0 bg-slate-900/50"
-                    @click="sidebarOpen = false"
-                />
-                <aside
-                    class="absolute inset-y-0 left-0 flex w-72 flex-col bg-[#0f2a5c] text-white shadow-xl"
-                >
+            <Transition
+                enter-active-class="transition-opacity duration-200 ease-out"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition-opacity duration-150 ease-in"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div v-if="sidebarOpen" class="fixed inset-0 z-50 lg:hidden">
                     <div
-                        class="flex items-center justify-between px-5 pt-6 pb-4"
+                        class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"
+                        @click="sidebarOpen = false"
+                    />
+                    <aside
+                        class="absolute inset-y-0 left-0 flex w-72 flex-col bg-[#0f2a5c] text-white shadow-xl transition-colors duration-200 dark:border-r dark:border-slate-800/80 dark:bg-[#071328] animate-in-slide-left"
                     >
-                        <div class="flex items-center gap-2">
-                            <img
-                                src="/logoEduMart.jpeg"
-                                alt="Logo EduMart"
-                                class="h-10 w-10 rounded-xl bg-white object-contain p-1"
-                            />
-                            <div>
-                                <p class="text-base font-bold">EduMart</p>
-                                <p class="text-[11px] text-blue-200">
-                                    Kasir Alat Sekolah
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            class="rounded-lg p-1.5 hover:bg-white/10"
-                            @click="sidebarOpen = false"
+                        <div
+                            class="flex items-center justify-between px-5 pt-6 pb-4"
                         >
-                            <X class="h-5 w-5" />
-                        </button>
-                    </div>
-                    <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-                        <template v-if="!pos.me">
-                            <div
-                                v-for="i in 6"
-                                :key="i"
-                                class="h-11 animate-pulse rounded-xl bg-white/10"
-                            />
-                        </template>
-                        <template v-else>
-                            <Link
-                                v-for="m in visibleMenus"
-                                :key="m.key"
-                                :href="m.href"
-                                :class="[
-                                    'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium',
-                                    currentUrl.startsWith(m.href)
-                                        ? 'bg-white text-[#0f2a5c]'
-                                        : 'text-blue-100 hover:bg-white/10',
-                                ]"
-                                @click="sidebarOpen = false"
-                            >
-                                <component
-                                    :is="m.icon"
-                                    class="h-5 w-5 shrink-0"
+                            <div class="flex items-center gap-2">
+                                <img
+                                    src="/logoScholify.png"
+                                    alt="Logo Scholify"
+                                    class="h-10 w-10 rounded-xl bg-white object-contain p-1 shadow-sm"
                                 />
-                                {{ m.label }}
-                            </Link>
-                        </template>
-                    </nav>
-                    <div class="border-t border-white/10 p-3">
-                        <div class="relative">
+                                <div>
+                                    <p class="text-base font-bold tracking-tight">Scholify</p>
+                                    <p class="text-[11px] text-blue-200 dark:text-blue-300/80">
+                                        Smart School POS
+                                    </p>
+                                </div>
+                            </div>
                             <button
                                 type="button"
-                                class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/10"
-                                @click="showProfile = !showProfile"
+                                class="rounded-lg p-1.5 hover:bg-white/10 active-press"
+                                @click="sidebarOpen = false"
                             >
-                                <div
-                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold text-white"
-                                >
-                                    {{ profileInitials || 'U' }}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <p
-                                        class="truncate text-sm font-semibold text-white"
-                                    >
-                                        {{ pos.me?.nama_lengkap ?? 'Memuat…' }}
-                                    </p>
-                                    <p
-                                        class="truncate text-[11px] text-blue-200"
-                                    >
-                                        {{
-                                            pos.me?.sekolah?.nama_sekolah ??
-                                            pos.sekolahAktif?.nama_sekolah ??
-                                            pos.ownRole
-                                        }}
-                                    </p>
-                                </div>
-                                <ChevronsUpDown
-                                    class="h-4 w-4 shrink-0 text-blue-200"
-                                />
+                                <X class="h-5 w-5" />
                             </button>
-                            <div
-                                v-if="showProfile"
-                                class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-                            >
+                        </div>
+                        <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+                            <template v-if="!pos.me">
+                                <div
+                                    v-for="i in 6"
+                                    :key="i"
+                                    class="h-11 animate-pulse rounded-xl bg-white/10"
+                                />
+                            </template>
+                            <template v-else>
+                                <Link
+                                    v-for="m in visibleMenus"
+                                    :key="m.key"
+                                    :href="m.href"
+                                    :class="[
+                                        'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition active-press',
+                                        currentUrl.startsWith(m.href)
+                                            ? 'bg-white text-[#0f2a5c] dark:bg-blue-600 dark:text-white'
+                                            : 'text-blue-100 hover:bg-white/10 dark:hover:bg-white/5',
+                                    ]"
+                                    @click="sidebarOpen = false"
+                                >
+                                    <component
+                                        :is="m.icon"
+                                        class="h-5 w-5 shrink-0"
+                                    />
+                                    {{ m.label }}
+                                </Link>
+                            </template>
+                        </nav>
+                        <div class="border-t border-white/10 p-3">
+                            <div class="relative">
                                 <button
                                     type="button"
-                                    class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
-                                    @click="
-                                        showProfile = false;
-                                        logout();
-                                    "
+                                    class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/10 active-press"
+                                    @click="showProfile = !showProfile"
                                 >
-                                    <LogOut class="h-4 w-4" /> Logout
+                                    <div
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold text-white"
+                                    >
+                                        {{ profileInitials || 'U' }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p
+                                            class="truncate text-sm font-semibold text-white"
+                                        >
+                                            {{ pos.me?.nama_lengkap ?? 'Memuat…' }}
+                                        </p>
+                                        <p class="truncate text-[11px] text-blue-200 dark:text-blue-300/80">
+                                            {{
+                                                pos.me?.sekolah?.nama_sekolah ??
+                                                pos.sekolahAktif?.nama_sekolah ??
+                                                pos.ownRole
+                                            }}
+                                        </p>
+                                    </div>
+                                    <ChevronsUpDown
+                                        class="h-4 w-4 shrink-0 text-blue-200"
+                                    />
                                 </button>
+                                <Transition
+                                    enter-active-class="transition duration-150 ease-out"
+                                    enter-from-class="opacity-0 scale-95 translate-y-1"
+                                    enter-to-class="opacity-100 scale-100 translate-y-0"
+                                    leave-active-class="transition duration-100 ease-in"
+                                    leave-from-class="opacity-100 scale-100 translate-y-0"
+                                    leave-to-class="opacity-0 scale-95 translate-y-1"
+                                >
+                                    <div
+                                        v-if="showProfile"
+                                        class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="flex w-full items-center justify-between border-b border-slate-100 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
+                                            @click="toggleDarkMode"
+                                        >
+                                            <span class="flex items-center gap-2">
+                                                <Sun v-if="isDark" class="h-4 w-4 text-amber-400" />
+                                                <Moon v-else class="h-4 w-4 text-slate-500" />
+                                                Mode Tampilan
+                                            </span>
+                                            <span
+                                                class="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                                                :class="isDark ? 'bg-slate-800 text-amber-300' : 'bg-slate-100 text-slate-600'"
+                                            >
+                                                {{ isDark ? 'Gelap' : 'Terang' }}
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                                            @click="
+                                                showProfile = false;
+                                                logout();
+                                            "
+                                        >
+                                            <LogOut class="h-4 w-4" /> Keluar
+                                        </button>
+                                    </div>
+                                </Transition>
                             </div>
                         </div>
-                    </div>
-                </aside>
-            </div>
+                    </aside>
+                </div>
+            </Transition>
         </Teleport>
 
-        <div class="lg:pl-60">
+        <div class="min-w-0 w-full overflow-x-hidden md:pl-60">
             <!-- Header -->
             <header
-                class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur"
+                class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900/95"
             >
-                <div class="flex items-center gap-2 px-3 py-2.5 sm:px-6">
+                <div class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 min-w-0">
                     <button
                         v-if="showBack"
                         type="button"
                         title="Kembali"
-                        class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+                        class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
                         @click="goBack"
                     >
                         <ArrowLeft class="h-5 w-5" />
                     </button>
                     <button
                         type="button"
-                        class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+                        title="Buka menu"
+                        class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
                         @click="sidebarOpen = true"
                     >
                         <Menu class="h-5 w-5" />
                     </button>
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-bold text-slate-900">
-                            EduMart
+                        <p class="truncate text-sm font-bold text-slate-900 dark:text-white">
+                            Scholify
                         </p>
-                        <p class="truncate text-[11px] text-slate-500">
+                        <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">
                             {{ pos.sekolahAktif?.nama_sekolah ?? '…' }} ·
                             {{ pos.me?.nama_lengkap ?? '…' }} ({{
                                 pos.ownRole
@@ -390,7 +597,7 @@ onUnmounted(() => {
                         <select
                             :value="pos.idSekolah"
                             title="Pindah sekolah"
-                            class="max-w-36 truncate rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs sm:max-w-52 sm:text-sm"
+                            class="max-w-24 sm:max-w-52 truncate rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             @change="
                                 pos.setCtxSekolah(
                                     Number(
@@ -411,7 +618,7 @@ onUnmounted(() => {
                         <select
                             :value="pos.effectiveRole"
                             title="Tampilan peran"
-                            class="max-w-32 truncate rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs sm:max-w-44 sm:text-sm"
+                            class="max-w-20 sm:max-w-44 truncate rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             @change="
                                 pos.setCtxRole(
                                     ($event.target as HTMLSelectElement).value,
@@ -428,7 +635,7 @@ onUnmounted(() => {
                         <select
                             :value="pos.effectiveRole"
                             title="Tampilan peran"
-                            class="max-w-32 truncate rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs sm:max-w-44 sm:text-sm"
+                            class="max-w-24 sm:max-w-44 truncate rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                             @change="
                                 pos.setCtxRole(
                                     ($event.target as HTMLSelectElement).value,
@@ -441,21 +648,44 @@ onUnmounted(() => {
                         </select>
                     </template>
 
-                    <!-- Notifikasi Stok Menipis Dropdown Popover -->
+                    <!-- Tombol Cepat Toggle Mode Gelap / Terang -->
+                    <button
+                        type="button"
+                        :title="isDark ? 'Beralih ke Mode Terang (Light Mode)' : 'Beralih ke Mode Gelap (Dark Mode)'"
+                        class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                        @click="toggleDarkMode"
+                    >
+                        <Sun v-if="isDark" class="h-5 w-5 text-amber-400 transition transform rotate-0 hover:rotate-45" />
+                        <Moon v-else class="h-5 w-5 text-slate-600 transition transform hover:-rotate-12" />
+                    </button>
+
+                    <!-- Notifikasi Dropdown Popover (Void & Stok) -->
                     <div ref="notifDropdownRef" class="relative">
                         <button
                             type="button"
-                            title="Peringatan Stok Menipis"
-                            class="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-                            :class="{ 'bg-amber-50 text-amber-700': showNotification }"
+                            title="Pemberitahuan Sistem"
+                            class="relative cursor-pointer rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            :class="{
+                                'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400':
+                                    showNotification,
+                            }"
                             @click="showNotification = !showNotification"
                         >
                             <Bell class="h-5 w-5" />
                             <span
-                                v-if="lowStockItems.length > 0"
-                                class="absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white animate-pulse"
+                                v-if="totalNotifCount > 0"
+                                :class="[
+                                    'absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900',
+                                    myPendingVoids.length > 0
+                                        ? 'bg-rose-600 animate-bounce'
+                                        : 'bg-red-600 animate-pulse',
+                                ]"
                             >
-                                {{ lowStockItems.length > 99 ? '99+' : lowStockItems.length }}
+                                {{
+                                    totalNotifCount > 99
+                                        ? '99+'
+                                        : totalNotifCount
+                                }}
                             </span>
                         </button>
 
@@ -469,115 +699,318 @@ onUnmounted(() => {
                         >
                             <div
                                 v-if="showNotification"
-                                class="absolute right-0 top-full mt-2 w-80 sm:w-96 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-50"
+                                class="absolute right-0 top-full mt-2 w-80 sm:w-96 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-50 dark:border-slate-800 dark:bg-slate-900"
                             >
                                 <!-- Header Popover -->
-                                <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-4 py-3">
+                                <div
+                                    class="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/90"
+                                >
                                     <div class="flex items-center gap-2">
-                                        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                                            <AlertTriangle class="h-4 w-4" />
+                                        <span
+                                            class="flex h-7 w-7 items-center justify-center rounded-lg shadow-xs"
+                                            :class="
+                                                myPendingVoids.length > 0
+                                                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
+                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
+                                            "
+                                        >
+                                            <component
+                                                :is="
+                                                    myPendingVoids.length > 0
+                                                        ? (isAdminRole ? MessageCircle : ShieldAlert)
+                                                        : AlertTriangle
+                                                "
+                                                class="h-4 w-4"
+                                            />
                                         </span>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900">
-                                                Peringatan Stok Menipis
+                                            <h4
+                                                class="text-xs font-bold text-slate-900 dark:text-white"
+                                            >
+                                                Pusat Pemberitahuan
                                             </h4>
-                                            <p class="text-[10px] text-slate-500">
-                                                {{ lowStockItems.length }} produk memerlukan restock
+                                            <p
+                                                class="text-[10px] text-slate-500 dark:text-slate-400"
+                                            >
+                                                <template v-if="myPendingVoids.length > 0">
+                                                    {{ myPendingVoids.length }} void butuh tindakan · {{ lowStockItems.length }} stok menipis
+                                                </template>
+                                                <template v-else>
+                                                    {{ lowStockItems.length }} produk memerlukan restock
+                                                </template>
                                             </p>
                                         </div>
                                     </div>
                                     <button
                                         type="button"
-                                        title="Muat ulang stok"
-                                        class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 transition"
-                                        :disabled="lowStockLoading"
-                                        @click="loadLowStockAlert"
+                                        title="Muat ulang semua notifikasi"
+                                        class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+                                        :disabled="lowStockLoading || pendingVoidLoading"
+                                        @click="refreshAllAlerts"
                                     >
-                                        <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': lowStockLoading }" />
+                                        <RefreshCw
+                                            class="h-3.5 w-3.5"
+                                            :class="{
+                                                'animate-spin':
+                                                    lowStockLoading ||
+                                                    pendingVoidLoading,
+                                            }"
+                                        />
                                     </button>
                                 </div>
 
-                                <!-- List Items -->
-                                <div class="max-h-72 overflow-y-auto divide-y divide-slate-100">
-                                    <div v-if="lowStockLoading && lowStockItems.length === 0" class="p-6 text-center">
-                                        <RefreshCw class="h-6 w-6 animate-spin text-slate-400 mx-auto mb-2" />
-                                        <p class="text-xs text-slate-500">Memeriksa stok produk…</p>
-                                    </div>
-
-                                    <div v-else-if="lowStockItems.length === 0" class="p-6 text-center">
-                                        <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                                            <CheckCircle class="h-5 w-5" />
-                                        </div>
-                                        <p class="text-xs font-bold text-slate-800">Semua Stok Aman</p>
-                                        <p class="text-[11px] text-slate-500 mt-0.5">
-                                            Tidak ada produk di bawah batas minimum (10 pcs).
-                                        </p>
-                                    </div>
-
+                                <!-- Konten Scrollable -->
+                                <div class="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                    <!-- ================= SEKSI 1: PENGAJUAN VOID BUTUH TINDAKAN ================= -->
                                     <div
-                                        v-for="item in lowStockItems"
-                                        :key="item.id_barang"
-                                        class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-slate-50/80 transition"
+                                        v-if="hasVoidManagement && myPendingVoids.length > 0"
+                                        class="bg-amber-50/20 dark:bg-amber-950/10"
                                     >
-                                        <div class="min-w-0 flex-1">
-                                            <p class="truncate text-xs font-semibold text-slate-900">
-                                                {{ item.nama }}
-                                            </p>
-                                            <p class="text-[10px] text-slate-500 truncate">
-                                                {{ item.kategori?.nama ?? 'Umum' }}
-                                                <span v-if="item.barcode"> · {{ item.barcode }}</span>
+                                        <!-- Header Sub Seksi Void -->
+                                        <div
+                                            class="flex items-center justify-between px-4 py-2 text-xs font-bold"
+                                            :class="
+                                                isAdminRole
+                                                    ? 'bg-amber-100/70 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300'
+                                                    : 'bg-blue-100/70 text-blue-900 dark:bg-blue-950/60 dark:text-blue-300'
+                                            "
+                                        >
+                                            <div class="flex items-center gap-1.5">
+                                                <component
+                                                    :is="isAdminRole ? MessageCircle : ShieldAlert"
+                                                    class="h-4 w-4 shrink-0"
+                                                />
+                                                <span>
+                                                    {{
+                                                        isAdminRole
+                                                            ? `Verifikasi Kasir (${pendingForAdmin.length})`
+                                                            : `Persetujuan Final Super Admin (${pendingForSuperAdmin.length})`
+                                                    }}
+                                                </span>
+                                            </div>
+                                            <Link
+                                                href="/penjualan"
+                                                class="text-[10px] font-semibold underline hover:opacity-80 transition"
+                                                @click="showNotification = false"
+                                            >
+                                                Buka Riwayat
+                                            </Link>
+                                        </div>
+
+                                        <!-- List Card Void -->
+                                        <div class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                                            <div
+                                                v-for="v in myPendingVoids"
+                                                :key="v.id_penjualan"
+                                                class="p-3.5 transition hover:bg-slate-50/90 dark:hover:bg-slate-800/50"
+                                            >
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="font-bold text-xs text-slate-800 dark:text-slate-100">
+                                                        Transaksi #{{ v.id_penjualan }}
+                                                    </span>
+                                                    <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                                                        {{ rupiah(v.total_faktur) }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Admin View -->
+                                                <template v-if="isAdminRole">
+                                                    <div class="mt-1 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                                                        <span>Kasir: <strong class="font-semibold">{{ v.kasir?.nama_lengkap ?? 'Kasir' }}</strong></span>
+                                                        <span v-if="v.void_telepon_kasir" class="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                                            WA: {{ v.void_telepon_kasir }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="mt-1 text-[11px] italic text-slate-500 dark:text-slate-400 line-clamp-2 bg-amber-50 dark:bg-amber-950/30 p-1.5 rounded border border-amber-200/50 dark:border-amber-900/40">
+                                                        "{{ v.alasan_void }}"
+                                                    </p>
+                                                </template>
+
+                                                <!-- Super Admin View -->
+                                                <template v-else-if="isSuperAdmin">
+                                                    <div class="mt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                                                        Diverifikasi oleh: <strong class="font-semibold">{{ v.admin_verifier?.nama_lengkap ?? 'Admin' }}</strong>
+                                                    </div>
+                                                    <p class="mt-1 text-[11px] italic text-slate-500 dark:text-slate-400 line-clamp-2 bg-blue-50 dark:bg-blue-950/30 p-1.5 rounded border border-blue-200/50 dark:border-blue-900/40">
+                                                        "{{ v.void_admin_notes || v.alasan_void }}"
+                                                    </p>
+                                                </template>
+
+                                                <div class="mt-2 flex items-center justify-end gap-1.5">
+                                                    <a
+                                                        v-if="isAdminRole && v.void_telepon_kasir"
+                                                        :href="getWaUrl(v.void_telepon_kasir, v)"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition hover:bg-emerald-700"
+                                                    >
+                                                        <MessageCircle class="h-3 w-3" />
+                                                        <span>Chat WA Kasir</span>
+                                                    </a>
+                                                    <Link
+                                                        href="/penjualan"
+                                                        class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition"
+                                                        :class="
+                                                            isAdminRole
+                                                                ? 'bg-amber-600 hover:bg-amber-700'
+                                                                : 'bg-blue-600 hover:bg-blue-700'
+                                                        "
+                                                        @click="showNotification = false"
+                                                    >
+                                                        <span>{{ isAdminRole ? 'Buka & Proses' : 'Tinjau & Putuskan' }}</span>
+                                                        <ExternalLink class="h-3 w-3" />
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ================= SEKSI 2: PERINGATAN STOK MENIPIS ================= -->
+                                    <div>
+                                        <div
+                                            v-if="hasVoidManagement && myPendingVoids.length > 0"
+                                            class="flex items-center justify-between border-t border-slate-100 bg-slate-100/70 px-4 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300"
+                                        >
+                                            <div class="flex items-center gap-1">
+                                                <AlertTriangle class="h-3.5 w-3.5 text-amber-500" />
+                                                <span>Peringatan Stok ({{ lowStockItems.length }})</span>
+                                            </div>
+                                            <Link
+                                                v-if="pos.can('stok')"
+                                                href="/stok"
+                                                class="text-[10px] font-semibold underline hover:opacity-80 transition"
+                                                @click="showNotification = false"
+                                            >
+                                                Lihat Stok
+                                            </Link>
+                                        </div>
+
+                                        <div
+                                            v-if="lowStockLoading && lowStockItems.length === 0"
+                                            class="p-6 text-center"
+                                        >
+                                            <RefreshCw class="mx-auto mb-2 h-6 w-6 animate-spin text-slate-400" />
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                                Memeriksa stok produk…
                                             </p>
                                         </div>
-                                        <div class="shrink-0 text-right">
-                                            <span
-                                                :class="[
-                                                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
-                                                    Number(item.stok) <= 0
-                                                        ? 'bg-red-100 text-red-700'
-                                                        : 'bg-amber-100 text-amber-700',
-                                                ]"
+
+                                        <div
+                                            v-else-if="lowStockItems.length === 0 && myPendingVoids.length === 0"
+                                            class="p-6 text-center"
+                                        >
+                                            <div
+                                                class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
                                             >
-                                                {{ Number(item.stok) <= 0 ? 'Habis (0)' : `Sisa ${item.stok} ${item.satuan}` }}
-                                            </span>
+                                                <CheckCircle class="h-5 w-5" />
+                                            </div>
+                                            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                Semua Berjalan Normal
+                                            </p>
+                                            <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                                Tidak ada antrean pembatalan transaksi maupun peringatan stok produk.
+                                            </p>
+                                        </div>
+
+                                        <div
+                                            v-for="item in lowStockItems"
+                                            :key="item.id_barang"
+                                            class="flex items-center justify-between gap-3 px-4 py-2.5 transition hover:bg-slate-50/80 dark:hover:bg-slate-800/60"
+                                        >
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center gap-1.5">
+                                                    <p class="truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
+                                                        {{ item.nama }}
+                                                    </p>
+                                                    <span
+                                                        v-if="item.status === 'kritis'"
+                                                        class="shrink-0 rounded-full bg-red-100 px-1.5 py-0.2 text-[9px] font-bold text-red-700 dark:bg-red-950/60 dark:text-red-300"
+                                                    >
+                                                        Kritis
+                                                    </span>
+                                                    <span
+                                                        v-else-if="item.status === 'waspada'"
+                                                        class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                                                    >
+                                                        Waspada
+                                                    </span>
+                                                </div>
+                                                <p class="truncate text-[10px] text-slate-500 dark:text-slate-400">
+                                                    {{ item.kategori?.nama ?? 'Umum' }}
+                                                    <span v-if="item.estimasi_hari_habis !== null && item.estimasi_hari_habis <= 5">
+                                                        · Habis ~{{ item.estimasi_hari_habis }} hr lagi
+                                                    </span>
+                                                    <span v-else-if="Number(item.stok) <= 0">
+                                                        · Habis sekarang!
+                                                    </span>
+                                                </p>
+                                            </div>
+                                            <div class="shrink-0 text-right flex items-center gap-2">
+                                                <span
+                                                    :class="[
+                                                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                                                        Number(item.stok) <= 0
+                                                            ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
+                                                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
+                                                    ]"
+                                                >
+                                                    {{
+                                                        Number(item.stok) <= 0
+                                                            ? 'Habis (0)'
+                                                            : `Sisa ${item.stok} ${item.satuan}`
+                                                    }}
+                                                </span>
+                                                <Link
+                                                    v-if="pos.can('pembelian')"
+                                                    :href="`/pembelian?tambah=1&id_barang=${item.id_barang}&jumlah=${item.rekomendasi_restock || 10}&id_supplier=${item.supplier?.id_supplier || ''}`"
+                                                    class="text-[10px] font-bold text-orange-600 hover:text-orange-700 dark:text-orange-400 hover:underline"
+                                                    title="Beli stok ke supplier"
+                                                    @click="showNotification = false"
+                                                >
+                                                    + Restock
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Footer Actions -->
-                                <div class="border-t border-slate-100 bg-slate-50 px-3 py-2.5 flex items-center justify-between gap-2">
+                                <div
+                                    class="flex items-center justify-between gap-1.5 border-t border-slate-100 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/60"
+                                >
+                                    <Link
+                                        v-if="pos.can('penjualan')"
+                                        href="/penjualan"
+                                        class="flex-1 rounded-xl border border-slate-200 bg-white py-1.5 text-center text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                                        @click="showNotification = false"
+                                    >
+                                        Riwayat
+                                    </Link>
+                                    <Link
+                                        v-if="pos.can('stok')"
+                                        href="/stok?tab=prediksi"
+                                        class="flex-1 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 py-1.5 text-center text-xs font-bold text-white shadow-xs transition hover:opacity-95"
+                                        @click="showNotification = false"
+                                    >
+                                        ⚡ Smart Restock
+                                    </Link>
                                     <Link
                                         v-if="pos.can('stok')"
                                         href="/stok"
-                                        class="flex-1 rounded-xl border border-slate-200 bg-white py-1.5 text-center text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+                                        class="flex-1 rounded-xl bg-[#0f2a5c] py-1.5 text-center text-xs font-medium text-white shadow-xs transition hover:bg-[#0c2149] dark:bg-blue-600 dark:hover:bg-blue-700"
                                         @click="showNotification = false"
                                     >
                                         Kelola Stok
-                                    </Link>
-                                    <Link
-                                        v-if="pos.can('pembelian')"
-                                        href="/pembelian"
-                                        class="flex-1 rounded-xl bg-[#0f2a5c] py-1.5 text-center text-xs font-medium text-white hover:bg-[#0c2149] transition shadow-sm"
-                                        @click="showNotification = false"
-                                    >
-                                        + Beli Stok
                                     </Link>
                                 </div>
                             </div>
                         </Transition>
                     </div>
 
-                    <Link
-                        v-if="pos.can('pengaturan')"
-                        href="/settings/security"
-                        title="Ganti password"
-                        class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                    >
-                        <KeyRound class="h-5 w-5" />
-                    </Link>
                     <button
                         type="button"
                         title="Keluar"
-                        class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
+                        class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/40 dark:hover:text-red-400"
                         @click="logout"
                     >
                         <LogOut class="h-5 w-5" />
@@ -585,7 +1018,7 @@ onUnmounted(() => {
                 </div>
             </header>
 
-            <main class="mx-auto w-full max-w-7xl px-4 pt-4 pb-24 lg:pb-4">
+            <main class="w-full min-w-0 px-3 sm:px-6 pt-4 pb-24 md:pb-6 animate-fade-in">
                 <slot />
             </main>
         </div>

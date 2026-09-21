@@ -38,3 +38,58 @@ export async function createPenjualan(payload: PenjualanPayload) {
     );
     return data;
 }
+
+export async function fetchPendingVoidRequests(
+    idSekolah?: number,
+    tier?: 'admin' | 'super_admin',
+) {
+    const { data } = await api.get<ApiResponse<Penjualan[]>>(
+        '/penjualan/void-requests',
+        { params: { id_sekolah: idSekolah, tier } },
+    );
+    return data.data;
+}
+
+export async function requestVoidPenjualan(
+    id: number,
+    payload: { id_user: number; alasan: string; telepon_kasir?: string },
+) {
+    const { data } = await api.post<ApiResponse<Penjualan>>(
+        `/penjualan/${id}/request-void`,
+        payload,
+    );
+    return data;
+}
+
+export async function forwardVoidPenjualan(
+    id: number,
+    payload: { id_user: number; catatan_admin: string },
+) {
+    const { data } = await api.post<ApiResponse<Penjualan>>(
+        `/penjualan/${id}/forward-void`,
+        payload,
+    );
+    return data;
+}
+
+export async function approveVoidPenjualan(
+    id: number,
+    payload: { id_user: number },
+) {
+    const { data } = await api.post<ApiResponse<Penjualan>>(
+        `/penjualan/${id}/approve-void`,
+        payload,
+    );
+    return data;
+}
+
+export async function rejectVoidPenjualan(
+    id: number,
+    payload: { id_user: number; alasan_penolakan?: string },
+) {
+    const { data } = await api.post<ApiResponse<Penjualan>>(
+        `/penjualan/${id}/reject-void`,
+        payload,
+    );
+    return data;
+}

@@ -243,20 +243,20 @@ const svgData = computed(() => {
             :icon="LayoutDashboard"
             :subtitle="
                 pos.sekolahAktif
-                    ? `Ringkasan ${pos.sekolahAktif.nama_sekolah} — ${tanggal(new Date().toISOString())}`
-                    : 'Ringkasan toko hari ini'
+                    ? `Ringkasan operasional ${pos.sekolahAktif.nama_sekolah} — ${tanggal(new Date().toISOString())}`
+                    : 'Ringkasan operasional dan penjualan toko hari ini'
             "
         >
             <template #actions>
                 <Link
                     href="/kasir"
-                    class="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-800"
+                    class="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-800 active-press dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs"
                 >
                     Buka Kasir
                 </Link>
                 <Link
                     href="/laporan"
-                    class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold hover:border-blue-300"
+                    class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold hover:border-blue-300 active-press dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 shadow-xs"
                 >
                     Lihat Laporan
                 </Link>
@@ -264,36 +264,36 @@ const svgData = computed(() => {
         </PageHeader>
 
         <!-- skeleton : gap disamakan foto = 12px mobile / 16px desktop -->
-        <div v-if="loading" class="flex flex-col gap-3 lg:gap-4">
+        <div v-if="loading" class="flex flex-col gap-3 lg:gap-4 animate-fade-in">
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
                 <div
                     v-for="i in 4"
                     :key="i"
-                    class="h-24 animate-pulse rounded-2xl bg-white"
+                    class="h-24 animate-pulse rounded-2xl bg-white dark:bg-slate-900"
                 />
             </div>
             <div class="grid gap-3 lg:grid-cols-3 lg:gap-4">
-                <div class="h-64 animate-pulse rounded-2xl bg-white lg:col-span-2" />
-                <div class="h-64 animate-pulse rounded-2xl bg-white" />
+                <div class="h-64 animate-pulse rounded-2xl bg-white dark:bg-slate-900 lg:col-span-2" />
+                <div class="h-64 animate-pulse rounded-2xl bg-white dark:bg-slate-900" />
             </div>
         </div>
 
         <template v-else-if="data">
             <!-- wrapper vertikal: gap konsisten seperti di foto (12px mobile, 16px desktop) -->
-            <div class="flex flex-col gap-3 lg:gap-4">
+            <div class="flex flex-col gap-3 lg:gap-4 animate-fade-up">
                 <!-- Stat atas -->
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
                 <StatCard
                     title="Penjualan Hari Ini"
                     :value="rupiah(data.penjualan_hari_ini)"
-                    :hint="`${data.transaksi_hari_ini} transaksi hari ini`"
+                    :hint="`${data.transaksi_hari_ini} transaksi selesai hari ini`"
                     color="blue"
                     :icon="TrendingUp"
                 />
                 <StatCard
                     title="Transaksi Hari Ini"
                     :value="String(data.transaksi_hari_ini)"
-                    hint="Jumlah struk hari ini"
+                    hint="Total struk terbit hari ini"
                     color="emerald"
                     :icon="ReceiptText"
                 />
@@ -307,7 +307,7 @@ const svgData = computed(() => {
                 <StatCard
                     title="Total Stok"
                     :value="String(data.total_stok)"
-                    hint="Semua barang aktif"
+                    hint="Total unit stok tersedia"
                     color="amber"
                     :icon="Boxes"
                 />
@@ -317,24 +317,24 @@ const svgData = computed(() => {
                 <div class="grid gap-3 lg:grid-cols-3 lg:gap-4">
                 <!-- Grafik 7 hari -->
                 <div
-                    class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 lg:col-span-2 shadow-xs"
+                    class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 lg:col-span-2 shadow-xs dark:border-slate-800 dark:bg-slate-900"
                 >
                     <!-- Header with Title and Switchers -->
                     <div
-                        class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3"
+                        class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3 dark:border-slate-800"
                     >
                         <div class="flex items-center gap-2.5">
                             <div
-                                class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700"
+                                class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400"
                             >
                                 <BarChart3 class="h-4.5 w-4.5" />
                             </div>
                             <div>
-                                <h2 class="text-sm font-bold text-slate-900">
+                                <h2 class="text-sm font-bold text-slate-900 dark:text-white">
                                     Tren Penjualan 7 Hari
                                 </h2>
-                                <p class="text-[11px] text-slate-500">
-                                    Pantau ritme omset dan frekuensi transaksi sepekan
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    Pantau tren omzet dan volume transaksi 7 hari terakhir
                                 </p>
                             </div>
                         </div>
@@ -343,27 +343,27 @@ const svgData = computed(() => {
                         <div class="flex flex-wrap items-center gap-2">
                             <!-- Metric Toggle -->
                             <div
-                                class="inline-flex rounded-xl bg-slate-100 p-1 text-xs"
+                                class="inline-flex rounded-xl bg-slate-100 p-1 text-xs dark:bg-slate-800"
                             >
                                 <button
                                     type="button"
                                     :class="[
                                         'rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer',
                                         metricMode === 'omset'
-                                            ? 'bg-white text-blue-700 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900',
+                                            ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-400'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                                     ]"
                                     @click="metricMode = 'omset'"
                                 >
-                                    Omset (Rp)
+                                    Omzet (Rp)
                                 </button>
                                 <button
                                     type="button"
                                     :class="[
                                         'rounded-lg px-2.5 py-1 font-semibold transition cursor-pointer',
                                         metricMode === 'transaksi'
-                                            ? 'bg-white text-emerald-700 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900',
+                                            ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-900 dark:text-emerald-400'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                                     ]"
                                     @click="metricMode = 'transaksi'"
                                 >
@@ -373,7 +373,7 @@ const svgData = computed(() => {
 
                             <!-- Chart Type Switcher -->
                             <div
-                                class="inline-flex rounded-xl bg-slate-100 p-1 text-xs"
+                                class="inline-flex rounded-xl bg-slate-100 p-1 text-xs dark:bg-slate-800"
                             >
                                 <button
                                     type="button"
@@ -381,8 +381,8 @@ const svgData = computed(() => {
                                     :class="[
                                         'rounded-lg p-1.5 transition cursor-pointer',
                                         chartType === 'bar'
-                                            ? 'bg-white text-blue-700 shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-900',
+                                            ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-400'
+                                            : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                                     ]"
                                     @click="chartType = 'bar'"
                                 >
@@ -394,8 +394,8 @@ const svgData = computed(() => {
                                     :class="[
                                         'rounded-lg p-1.5 transition cursor-pointer',
                                         chartType === 'line'
-                                            ? 'bg-white text-blue-700 shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-900',
+                                            ? 'bg-white text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-400'
+                                            : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                                     ]"
                                     @click="chartType = 'line'"
                                 >
@@ -407,41 +407,41 @@ const svgData = computed(() => {
 
                     <!-- Mini KPI Summary Bar -->
                     <div
-                        class="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-slate-50/80 p-2.5 border border-slate-100"
+                        class="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-slate-50/80 p-2.5 border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800"
                     >
                         <div class="px-1.5 sm:px-2">
-                            <p class="text-[10px] font-medium text-slate-500">
+                            <p class="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                                 Total 7 Hari
                             </p>
                             <p
-                                class="text-xs sm:text-sm font-bold text-slate-900 truncate"
+                                class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate"
                             >
                                 {{ rupiah(totalOmset7Hari) }}
                             </p>
-                            <p class="text-[10px] text-slate-400 truncate">
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                                 {{ totalTransaksi7Hari }} transaksi
                             </p>
                         </div>
-                        <div class="border-x border-slate-200 px-1.5 sm:px-2">
-                            <p class="text-[10px] font-medium text-slate-500">
+                        <div class="border-x border-slate-200 px-1.5 sm:px-2 dark:border-slate-700/60">
+                            <p class="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                                 Rata-rata / Hari
                             </p>
                             <p
-                                class="text-xs sm:text-sm font-bold text-blue-700 truncate"
+                                class="text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-400 truncate"
                             >
                                 {{ rupiah(rataRataOmset) }}
                             </p>
-                            <p class="text-[10px] text-slate-400 truncate">
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                                 ~{{ (totalTransaksi7Hari / 7).toFixed(1) }} trx /
                                 hari
                             </p>
                         </div>
                         <div class="px-1.5 sm:px-2">
-                            <p class="text-[10px] font-medium text-slate-500">
+                            <p class="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                                 Hari Tertinggi
                             </p>
                             <p
-                                class="text-xs sm:text-sm font-bold text-amber-600 truncate flex items-center gap-1"
+                                class="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 truncate flex items-center gap-1"
                             >
                                 <Trophy
                                     class="h-3.5 w-3.5 shrink-0 text-amber-500"
@@ -453,7 +453,7 @@ const svgData = computed(() => {
                                 </span>
                                 <span v-else>—</span>
                             </p>
-                            <p class="text-[10px] text-slate-400 truncate">
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                                 {{
                                     bestDay
                                         ? rupiah(bestDay.total)
@@ -469,8 +469,8 @@ const svgData = computed(() => {
                         class="py-8"
                     >
                         <EmptyState
-                            title="Belum ada penjualan 7 hari terakhir"
-                            message="Transaksi baru akan muncul di grafik ini."
+                            title="Belum Ada Data Penjualan 7 Hari Terakhir"
+                            message="Data grafik tren penjualan akan diperbarui secara otomatis saat transaksi baru tercatat."
                         />
                     </div>
                     <div v-else class="relative pt-6">
@@ -580,7 +580,7 @@ const svgData = computed(() => {
                         <div class="flex gap-2 sm:gap-3" style="height: 220px">
                             <!-- Y-Axis Labels -->
                             <div
-                                class="w-10 sm:w-12 shrink-0 flex flex-col justify-between text-right pr-1 pb-10 text-[10px] text-slate-400 font-medium select-none"
+                                class="w-10 sm:w-12 shrink-0 flex flex-col justify-between text-right pr-1 pb-10 text-[10px] text-slate-400 font-medium select-none dark:text-slate-500"
                             >
                                 <span
                                     v-for="(step, idx) in gridSteps"
@@ -599,7 +599,7 @@ const svgData = computed(() => {
                                     <div
                                         v-for="(step, idx) in gridSteps"
                                         :key="idx"
-                                        class="w-full border-t border-dashed border-slate-200/80"
+                                        class="w-full border-t border-dashed border-slate-200/80 dark:border-slate-800"
                                     />
                                 </div>
 
@@ -624,8 +624,8 @@ const svgData = computed(() => {
                                                 :class="[
                                                     'text-[10px] sm:text-xs font-bold transition-colors',
                                                     hoveredIndex === idx
-                                                        ? 'text-blue-700'
-                                                        : 'text-slate-600',
+                                                        ? 'text-blue-700 dark:text-blue-400'
+                                                        : 'text-slate-600 dark:text-slate-400',
                                                 ]"
                                             >
                                                 {{
@@ -642,9 +642,9 @@ const svgData = computed(() => {
 
                                         <!-- Column Track & Bar -->
                                         <div
-                                            class="relative flex-1 w-full max-w-12 flex items-end justify-center rounded-xl bg-slate-100/70 p-0.5 sm:p-1 border border-slate-100 transition-all duration-200 group-hover:bg-slate-100"
+                                            class="relative flex-1 w-full max-w-12 flex items-end justify-center rounded-xl bg-slate-100/70 p-0.5 sm:p-1 border border-slate-100 transition-all duration-200 group-hover:bg-slate-100 dark:bg-slate-800/60 dark:border-slate-700/50 dark:group-hover:bg-slate-800"
                                             :class="{
-                                                'ring-2 ring-blue-400/50 bg-blue-50/40':
+                                                'ring-2 ring-blue-400/50 bg-blue-50/40 dark:ring-blue-500/50 dark:bg-blue-950/30':
                                                     hoveredIndex === idx,
                                             }"
                                         >
@@ -706,21 +706,21 @@ const svgData = computed(() => {
                                                 :class="[
                                                     'text-[11px] leading-tight transition-colors',
                                                     isHariIni(g.tanggal)
-                                                        ? 'font-bold text-blue-700'
-                                                        : 'font-semibold text-slate-700',
+                                                        ? 'font-bold text-blue-700 dark:text-blue-400'
+                                                        : 'font-semibold text-slate-700 dark:text-slate-300',
                                                 ]"
                                             >
                                                 {{ formatHari(g.tanggal) }}
                                             </span>
                                             <span
                                                 v-if="isHariIni(g.tanggal)"
-                                                class="rounded bg-blue-100 px-1 text-[9px] font-bold text-blue-700 leading-tight"
+                                                class="rounded bg-blue-100 px-1 text-[9px] font-bold text-blue-700 leading-tight dark:bg-blue-950/80 dark:text-blue-300"
                                             >
                                                 Hari Ini
                                             </span>
                                             <span
                                                 v-else
-                                                class="text-[10px] text-slate-400 leading-tight"
+                                                class="text-[10px] text-slate-400 leading-tight dark:text-slate-500"
                                             >
                                                 {{ formatTglBulan(g.tanggal) }}
                                             </span>
@@ -843,55 +843,55 @@ const svgData = computed(() => {
 
                                     <!-- Day labels below SVG chart -->
                                     <div
-                                        class="absolute -bottom-9 inset-x-0 flex justify-between px-3"
-                                    >
-                                        <div
-                                            v-for="g in grafikList"
-                                            :key="g.tanggal"
-                                            class="flex flex-col items-center text-center"
-                                        >
-                                            <span
-                                                :class="[
-                                                    'text-[11px] leading-tight',
-                                                    isHariIni(g.tanggal)
-                                                        ? 'font-bold text-blue-700'
-                                                        : 'font-semibold text-slate-700',
-                                                ]"
-                                            >
-                                                {{ formatHari(g.tanggal) }}
-                                            </span>
-                                            <span
-                                                v-if="isHariIni(g.tanggal)"
-                                                class="rounded bg-blue-100 px-1 text-[9px] font-bold text-blue-700 leading-tight"
-                                            >
-                                                Hari Ini
-                                            </span>
-                                            <span
-                                                v-else
-                                                class="text-[10px] text-slate-400 leading-tight"
-                                            >
-                                                {{ formatTglBulan(g.tanggal) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                         class="absolute -bottom-9 inset-x-0 flex justify-between px-3"
+                                     >
+                                         <div
+                                             v-for="g in grafikList"
+                                             :key="g.tanggal"
+                                             class="flex flex-col items-center text-center"
+                                         >
+                                             <span
+                                                 :class="[
+                                                     'text-[11px] leading-tight',
+                                                     isHariIni(g.tanggal)
+                                                         ? 'font-bold text-blue-700 dark:text-blue-400'
+                                                         : 'font-semibold text-slate-700 dark:text-slate-300',
+                                                 ]"
+                                             >
+                                                 {{ formatHari(g.tanggal) }}
+                                             </span>
+                                             <span
+                                                 v-if="isHariIni(g.tanggal)"
+                                                 class="rounded bg-blue-100 px-1 text-[9px] font-bold text-blue-700 leading-tight dark:bg-blue-950/80 dark:text-blue-300"
+                                             >
+                                                 Hari Ini
+                                             </span>
+                                             <span
+                                                 v-else
+                                                 class="text-[10px] text-slate-400 leading-tight dark:text-slate-500"
+                                             >
+                                                 {{ formatTglBulan(g.tanggal) }}
+                                             </span>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
 
-                <!-- Stok rendah -->
-                <div
-                    class="rounded-2xl border border-slate-200 bg-white p-4"
-                >
-                    <div class="mb-4 flex items-center gap-2">
-                        <div
-                            class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600"
-                        >
-                            <AlertTriangle class="h-4 w-4" />
-                        </div>
-                        <h2 class="text-sm font-bold text-slate-900">
-                            Stok Rendah (≤ 10)
+                 <!-- Stok rendah -->
+                 <div
+                     class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+                 >
+                     <div class="mb-4 flex items-center gap-2">
+                         <div
+                             class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
+                         >
+                             <AlertTriangle class="h-4 w-4" />
+                         </div>
+                         <h2 class="text-sm font-bold text-slate-900 dark:text-white">
+                            Peringatan Stok Rendah (≤ 10)
                         </h2>
                     </div>
                     <div
@@ -900,62 +900,62 @@ const svgData = computed(() => {
                             data.produk_stok_rendah.length === 0
                         "
                     >
-                        <p class="py-4 text-center text-sm text-slate-400">
-                            Semua stok aman ✨
+                        <p class="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
+                            Semua stok produk dalam kondisi aman
                         </p>
                     </div>
-                    <ul v-else class="divide-y divide-slate-100">
-                        <li
-                            v-for="b in data.produk_stok_rendah"
-                            :key="b.id_barang"
-                            class="flex items-center justify-between gap-4 py-2.5"
-                        >
-                            <div class="min-w-0">
-                                <p
-                                    class="truncate text-sm font-semibold text-slate-800"
-                                >
-                                    {{ b.nama }}
-                                </p>
-                                <p class="text-xs text-slate-400">
-                                    {{ b.satuan }} · {{ b.kategori?.nama ?? '—' }}
-                                </p>
-                            </div>
-                            <span
-                                class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold"
-                                :class="
-                                    b.stok === 0
-                                        ? 'bg-red-50 text-red-600'
-                                        : b.stok <= 5
-                                          ? 'bg-amber-50 text-amber-600'
-                                          : 'bg-slate-100 text-slate-600'
-                                "
-                            >
-                                {{ b.stok }} pcs
-                            </span>
-                        </li>
-                    </ul>
-                    <Link
-                        href="/stok"
-                        class="mt-4 inline-flex w-full justify-center rounded-xl border border-slate-200 bg-white py-2 text-sm font-semibold hover:border-blue-300"
-                    >
-                        Kelola Stok
-                    </Link>
-                </div>
-            </div>
+                     <ul v-else class="divide-y divide-slate-100 dark:divide-slate-800">
+                         <li
+                             v-for="b in data.produk_stok_rendah"
+                             :key="b.id_barang"
+                             class="flex items-center justify-between gap-4 py-2.5"
+                         >
+                             <div class="min-w-0">
+                                 <p
+                                     class="truncate text-sm font-semibold text-slate-800 dark:text-slate-200"
+                                 >
+                                     {{ b.nama }}
+                                 </p>
+                                 <p class="text-xs text-slate-400 dark:text-slate-500">
+                                     {{ b.satuan }} · {{ b.kategori?.nama ?? '—' }}
+                                 </p>
+                             </div>
+                             <span
+                                 class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold"
+                                 :class="
+                                     b.stok === 0
+                                         ? 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400'
+                                         : b.stok <= 5
+                                           ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400'
+                                           : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                 "
+                             >
+                                 {{ b.stok }} pcs
+                             </span>
+                         </li>
+                     </ul>
+                     <Link
+                         href="/stok"
+                         class="mt-4 inline-flex w-full justify-center rounded-xl border border-slate-200 bg-white py-2 text-sm font-semibold hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700"
+                     >
+                         Kelola Stok
+                     </Link>
+                 </div>
+             </div>
 
-                <!-- Transaksi terbaru -->
-                <div
-                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                >
+                 <!-- Transaksi terbaru -->
+                 <div
+                     class="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                 >
                 <div class="flex items-center justify-between px-4 py-3">
-                    <h2 class="text-sm font-bold text-slate-900">
+                    <h2 class="text-sm font-bold text-slate-900 dark:text-white">
                         Transaksi Terbaru
                     </h2>
                     <Link
                         href="/penjualan"
-                        class="text-xs font-semibold text-blue-700 hover:underline"
+                        class="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-400"
                     >
-                        Lihat semua
+                        Lihat Semua
                     </Link>
                 </div>
                 <div
@@ -966,63 +966,63 @@ const svgData = computed(() => {
                     class="px-4 pb-4"
                 >
                     <EmptyState
-                        title="Belum ada transaksi"
-                        message="Buat transaksi di halaman Kasir, data akan muncul di sini."
+                        title="Belum Ada Transaksi"
+                        message="Mulai transaksi baru di menu Kasir untuk menampilkan riwayat penjualan di sini."
                     />
                 </div>
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full min-w-160 text-left text-sm">
-                            <thead>
-                                <tr
-                                    class="border-y border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase"
-                                >
-                                    <th class="px-4 py-3">#</th>
-                                    <th class="px-4 py-3">Tanggal</th>
-                                    <th class="px-4 py-3">Kasir</th>
-                                    <th class="px-4 py-3">Pelanggan</th>
-                                    <th class="px-4 py-3">Status</th>
-                                    <th class="px-4 py-3 text-right">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr
-                                    v-for="t in data.transaksi_terbaru"
-                                    :key="t.id_penjualan"
-                                    class="border-b border-slate-50 hover:bg-slate-50"
-                                >
-                                    <td class="px-4 py-3 text-slate-400">
-                                        {{ t.id_penjualan }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ tanggal(t.tanggal_penjualan) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ t.kasir?.nama_lengkap ?? '—' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ t.pelanggan?.nama_pelanggan ?? 'Umum' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span
-                                            class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600"
-                                            >{{ t.status_pembayaran }}</span
-                                        >
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-bold">
-                                        {{ rupiah(t.total_faktur) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                     <div v-else class="overflow-x-auto">
+                         <table class="w-full min-w-160 text-left text-sm">
+                             <thead>
+                                 <tr
+                                     class="border-y border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-400"
+                                 >
+                                     <th class="px-4 py-3">#</th>
+                                     <th class="px-4 py-3">Tanggal</th>
+                                     <th class="px-4 py-3">Kasir</th>
+                                     <th class="px-4 py-3">Pelanggan</th>
+                                     <th class="px-4 py-3">Status</th>
+                                     <th class="px-4 py-3 text-right">Total</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <tr
+                                     v-for="t in data.transaksi_terbaru"
+                                     :key="t.id_penjualan"
+                                     class="border-b border-slate-50 hover:bg-slate-50 dark:border-slate-800/60 dark:hover:bg-slate-800/50"
+                                 >
+                                     <td class="px-4 py-3 text-slate-400 dark:text-slate-500">
+                                         {{ t.id_penjualan }}
+                                     </td>
+                                     <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                                         {{ tanggal(t.tanggal_penjualan) }}
+                                     </td>
+                                     <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                                         {{ t.kasir?.nama_lengkap ?? '—' }}
+                                     </td>
+                                     <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                                         {{ t.pelanggan?.nama_pelanggan ?? 'Umum' }}
+                                     </td>
+                                     <td class="px-4 py-3">
+                                         <span
+                                             class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
+                                             >{{ t.status_pembayaran }}</span
+                                         >
+                                     </td>
+                                     <td class="px-4 py-3 text-right font-bold text-slate-900 dark:text-white">
+                                         {{ rupiah(t.total_faktur) }}
+                                     </td>
+                                 </tr>
+                             </tbody>
+                         </table>
+                     </div>
+                 </div>
             </div>
         </template>
 
         <div v-else class="mt-4">
             <EmptyState
-                title="Gagal memuat dashboard"
-                message="Coba muat ulang halaman."
+                title="Gagal Memuat Dashboard"
+                message="Silakan muat ulang halaman atau periksa koneksi internet Anda."
             />
         </div>
     </PosLayout>
