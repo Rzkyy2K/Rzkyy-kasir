@@ -8,8 +8,8 @@ import {
     CheckCircle2,
     Clock,
     Layers,
-    MessageCircle,
     MonitorSmartphone,
+    Moon,
     ScanBarcode,
     School,
     ShieldAlert,
@@ -18,13 +18,87 @@ import {
     ShoppingCart,
     Sparkles,
     Store,
+    Sun,
     Tags,
     Truck,
     UserPlus,
     Users,
 } from '@lucide/vue';
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useAppearance } from '@/composables/useAppearance';
 
+// ============================================================================
+// Fitur Ubah Tema (Warna Tampilan: Terang & Gelap)
+// ============================================================================
+const { resolvedAppearance, updateAppearance } = useAppearance();
+
+function toggleTheme() {
+    if (resolvedAppearance.value === 'dark') {
+        updateAppearance('light');
+    } else {
+        updateAppearance('dark');
+    }
+}
+
+// ============================================================================
+// Animasi Ketik Manual Super Smooth (Natural Typing Dynamics)
+// ============================================================================
+const phrases = [
+    'Tentang Aplikasi Scholify',
+    'Koperasi Sekolah Digital Modern',
+    'Transparan, Akurat & Terpercaya',
+];
+
+const displayedText = ref('');
+const currentPhraseIndex = ref(0);
+const isDeleting = ref(false);
+let typingTimer: ReturnType<typeof setTimeout> | null = null;
+
+function typeEffect() {
+    const currentFullText = phrases[currentPhraseIndex.value];
+
+    if (!isDeleting.value) {
+        const nextCharCount = displayedText.value.length + 1;
+        displayedText.value = currentFullText.substring(0, nextCharCount);
+
+        if (displayedText.value === currentFullText) {
+            isDeleting.value = true;
+            typingTimer = setTimeout(typeEffect, 2500);
+            return;
+        }
+
+        const lastChar = currentFullText[nextCharCount - 1];
+        let delay = Math.floor(Math.random() * 20) + 48;
+
+        if (lastChar === ' ') {
+            delay += 40;
+        } else if (lastChar === '!' || lastChar === '.' || lastChar === ',') {
+            delay += 160;
+        }
+
+        typingTimer = setTimeout(typeEffect, delay);
+    } else {
+        displayedText.value = currentFullText.substring(
+            0,
+            displayedText.value.length - 1,
+        );
+
+        if (displayedText.value === '') {
+            isDeleting.value = false;
+            currentPhraseIndex.value =
+                (currentPhraseIndex.value + 1) % phrases.length;
+            typingTimer = setTimeout(typeEffect, 450);
+            return;
+        }
+
+        const deleteSpeed = Math.floor(Math.random() * 5) + 22;
+        typingTimer = setTimeout(typeEffect, deleteSpeed);
+    }
+}
+
+// ============================================================================
+// Data Fitur & Katalog Scholify
+// ============================================================================
 const activeFeatureTab = ref<string>('all');
 
 const features = [
@@ -286,7 +360,8 @@ function scrollToSection(id: string, e?: Event) {
 }
 
 onMounted(() => {
-    // Cek jika ada hash langsung di URL
+    typingTimer = setTimeout(typeEffect, 500);
+
     if (window.location.hash) {
         const hashId = window.location.hash.replace('#', '');
         if (['cerita-kami', 'filosofi', 'about-our-products'].includes(hashId)) {
@@ -294,7 +369,6 @@ onMounted(() => {
         }
     }
 
-    // ScrollSpy observer untuk menandai menu aktif secara halus saat user menggulir
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
@@ -315,6 +389,9 @@ onMounted(() => {
     });
 
     onUnmounted(() => {
+        if (typingTimer) {
+            clearTimeout(typingTimer);
+        }
         observer.disconnect();
     });
 });
@@ -324,449 +401,468 @@ onMounted(() => {
     <Head title="Tentang Scholify — Kasir Koperasi Sekolah Modern" />
 
     <div
-        class="min-h-svh bg-gradient-to-br from-[#0f2a5c] via-[#1a3f7d] to-[#0b1f45] px-4 py-8 text-slate-900 selection:bg-[#0f2a5c] selection:text-white sm:px-6 md:px-10 md:py-10"
+        class="relative min-h-svh w-full overflow-x-hidden bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] font-sans text-slate-900 selection:bg-[#0c2356] selection:text-white pb-20"
     >
-        <div class="mx-auto flex w-full max-w-5xl flex-col gap-8">
-            <!-- ========================================================= -->
-            <!-- 1. HEADER & NAVIGASI (IDENTIK DENGAN HALAMAN LOGIN)      -->
-            <!-- ========================================================= -->
-            <header class="flex flex-col gap-6">
-                <!-- Navigasi Home — About (Gaya persis halaman Login) -->
-                <nav
-                    class="flex items-center justify-center gap-3 text-sm tracking-wide"
-                    aria-label="Navigasi"
-                >
-                    <Link
-                        href="/login"
-                        class="font-medium text-blue-200 transition hover:text-white"
-                    >
-                        Home
-                    </Link>
-                    <span class="text-blue-200/60">—</span>
-                    <Link href="/about" class="font-semibold text-white">
-                        About
-                    </Link>
-                </nav>
+        <!-- ================================================================= -->
+        <!-- LATAR BELAKANG GEOMETRIS & GLOW ORBS (IDENTIK DENGAN LOGIN)       -->
+        <!-- ================================================================= -->
+        <div class="pointer-events-none absolute inset-0 opacity-15 overflow-hidden">
+            <svg class="h-full w-full" viewBox="0 0 800 800" fill="none" preserveAspectRatio="none">
+                <circle cx="200" cy="200" r="280" stroke="white" stroke-width="1.5" stroke-dasharray="4 6" />
+                <circle cx="200" cy="200" r="420" stroke="white" stroke-width="1.5" />
+                <circle cx="200" cy="200" r="560" stroke="white" stroke-width="1" stroke-dasharray="8 8" />
+                <circle cx="200" cy="200" r="700" stroke="white" stroke-width="1" />
+            </svg>
+        </div>
 
-                <!-- Brand Bar Header dengan Glassmorphism Lembut & Sticky -->
-                <div
-                    class="sticky top-4 z-40 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/20 bg-[#0f2a5c]/85 px-6 py-3.5 shadow-xl shadow-black/25 backdrop-blur-xl transition-all duration-300"
-                >
-                    <Link href="/" class="flex items-center gap-3 transition hover:opacity-90">
+        <div class="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div class="pointer-events-none absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-blue-400/20 blur-3xl" />
+        <div class="pointer-events-none absolute bottom-20 -left-20 h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl" />
+
+        <!-- ================================================================= -->
+        <!-- NAVIGASI ATAS KAPSUL & FITUR UBAH TEMA (PERSIS HALAMAN LOGIN)     -->
+        <!-- ================================================================= -->
+        <nav
+            class="pointer-events-auto absolute z-50 flex items-center gap-2 sm:gap-3 rounded-full border border-white/30 bg-[#0c2356]/90 px-3.5 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold tracking-wide text-white shadow-xl shadow-black/30 backdrop-blur-xl transition hover:bg-[#0c2356] top-4 right-4 sm:top-6 sm:right-8 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:top-6"
+            aria-label="Navigasi dan Tema"
+        >
+            <Link href="/login" class="font-bold text-blue-100 transition hover:text-white">
+                Home
+            </Link>
+            <span class="text-cyan-400/50">—</span>
+            <Link href="/about" class="font-bold text-white transition hover:text-cyan-300">
+                About
+            </Link>
+            <span class="text-white/20">|</span>
+
+            <!-- Tombol Pengubah Warna Tampilan (Terang / Gelap) -->
+            <button
+                type="button"
+                @click="toggleTheme"
+                class="inline-flex items-center gap-1.5 rounded-full bg-white/15 hover:bg-white/25 px-2.5 py-1 text-xs font-semibold text-white transition-all cursor-pointer active:scale-95 shadow-sm"
+                :title="`Ubah Tema (Saat ini: ${resolvedAppearance === 'dark' ? 'Gelap' : 'Terang'})`"
+            >
+                <Moon v-if="resolvedAppearance === 'dark'" class="h-3.5 w-3.5 text-cyan-200" />
+                <Sun v-else class="h-3.5 w-3.5 text-amber-300" />
+                <span class="text-[11px] font-medium hidden sm:inline capitalize">
+                    {{ resolvedAppearance === 'dark' ? 'Gelap' : 'Terang' }}
+                </span>
+            </button>
+        </nav>
+
+        <!-- ================================================================= -->
+        <!-- CONTAINER KONTEN HALAMAN ABOUT (DEDIKASI PENUH MAKSIMAL 5XL)      -->
+        <!-- ================================================================= -->
+        <div class="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pt-20 sm:px-6 sm:pt-24 md:px-8 md:pt-28">
+            <!-- ============================================================= -->
+            <!-- 1. HERO HEADER: BRANDING, TYPEWRITER TITLE & SLOGAN           -->
+            <!-- ============================================================= -->
+            <header class="flex flex-col items-center text-center text-white">
+                <!-- Logo Scholify Glass Squircle -->
+                <Link href="/" class="group flex items-center gap-3 transition hover:opacity-95">
+                    <div class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-xl shadow-black/20 border border-white/25 transition-transform group-hover:scale-105">
                         <img
                             src="/logoScholify.png"
                             alt="Logo Scholify"
-                            class="h-10 w-10 rounded-2xl border border-slate-200 bg-white object-contain p-1 shadow-sm"
+                            class="h-full w-full object-contain"
                         />
-                        <div>
-                            <span class="text-base font-black tracking-tight text-white sm:text-lg">Scholify</span>
-                            <span class="block text-[9px] font-bold tracking-widest text-blue-200/70 uppercase sm:text-[10px]">
-                                POS Sekolah Modern
-                            </span>
-                        </div>
-                    </Link>
-
-                    <!-- Quick Navigation Links (Fore Coffee Style - Smooth Pills) -->
-                    <div class="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/10 p-1 backdrop-blur-md md:flex">
-                        <button
-                            v-for="nav in navSections"
-                            :key="nav.id"
-                            type="button"
-                            class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-300"
-                            :class="
-                                activeSection === nav.id
-                                    ? 'bg-white font-bold text-[#0f2a5c] shadow-md shadow-black/15'
-                                    : 'text-blue-200 hover:bg-white/15 hover:text-white'
-                            "
-                            @click="scrollToSection(nav.id, $event)"
-                        >
-                            {{ nav.label }}
-                        </button>
                     </div>
+                    <div class="text-left">
+                        <span class="text-xl font-black tracking-tight text-white sm:text-2xl leading-none block">Scholify</span>
+                        <span class="text-[10px] font-bold tracking-widest text-blue-200 uppercase">
+                            Smart School POS
+                        </span>
+                    </div>
+                </Link>
 
-                    <Link
-                        href="/login"
-                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-blue-500 active:scale-95 sm:px-5 sm:py-2.5"
-                    >
-                        <span>Masuk Aplikasi</span>
-                        <ArrowRight class="h-3.5 w-3.5" />
-                    </Link>
+                <!-- Sparkles Badge Mewah -->
+                <div class="mt-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-indigo-500/20 px-4 py-1.5 shadow-lg shadow-cyan-500/10 backdrop-blur-md">
+                    <Sparkles class="h-3.5 w-3.5 text-cyan-200 animate-pulse" />
+                    <span class="text-xs font-bold tracking-wide text-cyan-100">
+                        Mengenal Ekosistem Scholify
+                    </span>
                 </div>
 
-                <!-- Mobile Quick Navigation Strip (Tampil di smartphone / layar sempit) -->
-                <div class="flex items-center justify-center gap-1.5 overflow-x-auto rounded-2xl border border-white/15 bg-white/10 p-1.5 backdrop-blur-md md:hidden">
+                <!-- Headline Ucapan dengan Animasi Ketik Manual Super Smooth -->
+                <h1
+                    class="mt-4 min-h-[70px] sm:min-h-[85px] md:min-h-[96px] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight max-w-3xl"
+                >
+                    <span class="inline">{{ displayedText }}</span><span
+                        class="inline-block w-[3px] sm:w-1 h-[0.82em] bg-cyan-300 rounded-full ml-1.5 shadow-[0_0_10px_#38bdf8] typewriter-cursor align-[-0.06em]"
+                        aria-hidden="true"
+                    />
+                </h1>
+                <!-- Quick Navigation Bar (Sticky Glass Strip) -->
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 rounded-2xl border border-white/20 bg-[#0c2356]/80 p-2 shadow-xl shadow-black/25 backdrop-blur-xl">
                     <button
                         v-for="nav in navSections"
                         :key="nav.id"
                         type="button"
-                        class="cursor-pointer shrink-0 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-300"
+                        class="cursor-pointer rounded-xl px-4 py-1.5 text-xs font-bold transition-all duration-300"
                         :class="
                             activeSection === nav.id
-                                ? 'bg-white font-bold text-[#0f2a5c] shadow-sm'
+                                ? 'bg-white text-[#0c2356] shadow-md shadow-black/15 font-black'
                                 : 'text-blue-200 hover:bg-white/10 hover:text-white'
                         "
                         @click="scrollToSection(nav.id, $event)"
                     >
                         {{ nav.label }}
                     </button>
+                    <span class="text-white/20 hidden sm:inline">|</span>
+                    <Link
+                        href="/login"
+                        class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-1.5 text-xs font-bold text-white shadow-md transition active:scale-95"
+                    >
+                        <span>Masuk Aplikasi</span>
+                        <ArrowRight class="h-3.5 w-3.5" />
+                    </Link>
                 </div>
             </header>
 
-            <main class="flex flex-col gap-8">
-                <!-- ========================================================= -->
-                <!-- 2. SEKSI: CERITA KAMI (HERO SPLIT LAYOUT FORE COFFEE)     -->
-                <!-- ========================================================= -->
-                <section
-                    id="cerita-kami"
-                    class="scroll-mt-28 overflow-hidden rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10 dark:border-slate-800 dark:bg-slate-900"
-                >
-                    <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
-                        <!-- Left Side: Visual Showcase Card -->
-                        <div class="lg:col-span-6">
-                            <div class="relative overflow-hidden rounded-[28px] border border-slate-200/90 bg-gradient-to-br from-[#0f2a5c] via-[#153874] to-[#0c234d] p-6 text-white shadow-xl sm:p-8 dark:border-slate-700/80">
-                                <!-- Top Bar with School Pills -->
-                                <div class="flex items-center justify-between border-b border-white/15 pb-5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md">
-                                            <School class="h-5 w-5 text-blue-200" />
-                                        </div>
-                                        <div>
-                                            <p class="text-xs font-semibold text-blue-200">Koperasi Sekolah</p>
-                                            <p class="text-sm font-bold text-white">Scholify Platform</p>
-                                        </div>
+            <!-- ============================================================= -->
+            <!-- 2. SEKSI: CERITA KAMI (CARD HERO SPLIT LAYOUT)                -->
+            <!-- ============================================================= -->
+            <section
+                id="cerita-kami"
+                class="scroll-mt-24 rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-10 dark:border-slate-800 dark:bg-slate-900/95 transition-all text-slate-900 dark:text-white"
+            >
+                <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
+                    <!-- Left Side: Visual Showcase Card dengan Gradient Squircles -->
+                    <div class="lg:col-span-6">
+                        <div class="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] p-5 text-white shadow-xl sm:p-7">
+                            <div class="flex items-center justify-between border-b border-white/15 pb-4">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md">
+                                        <School class="h-5 w-5 text-cyan-200" />
                                     </div>
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-semibold text-emerald-300 backdrop-blur-md">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                        Real-time POS
-                                    </span>
-                                </div>
-
-                                <!-- Middle: Quick Snapshot Mockup -->
-                                <div class="my-6 space-y-3.5">
-                                    <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
-                                        <div class="flex items-center justify-between text-xs text-blue-200">
-                                            <span>Total Penjualan Hari Ini</span>
-                                            <span class="font-bold text-white">4 Sekolah Aktif</span>
-                                        </div>
-                                        <p class="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                                            Rp 4.850.000
-                                        </p>
-                                        <div class="mt-2.5 flex items-center gap-2 text-[11px] text-emerald-300">
-                                            <CheckCircle2 class="h-3.5 w-3.5" />
-                                            <span>128 nota selesai tanpa selisih stok</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-2 gap-3 text-xs">
-                                        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
-                                            <p class="text-blue-200/80">Alat Sekolah</p>
-                                            <p class="mt-0.5 text-base font-bold text-white">320+ Item</p>
-                                        </div>
-                                        <div class="rounded-xl border border-white/10 bg-white/5 p-3">
-                                            <p class="text-blue-200/80">Makanan & Minum</p>
-                                            <p class="mt-0.5 text-base font-bold text-white">150+ Item</p>
-                                        </div>
+                                    <div>
+                                        <p class="text-[11px] font-semibold text-blue-200">Koperasi Sekolah</p>
+                                        <p class="text-sm font-bold text-white">Scholify Platform</p>
                                     </div>
                                 </div>
-
-                                <!-- Bottom Partner Schools Badge -->
-                                <div class="flex flex-wrap items-center justify-between gap-2 border-t border-white/15 pt-4 text-xs text-blue-200/90">
-                                    <span>Mitra Koperasi:</span>
-                                    <div class="flex flex-wrap gap-1 font-semibold text-white">
-                                        <span class="rounded-md bg-white/10 px-2 py-0.5">SMKN 1</span>
-                                        <span class="rounded-md bg-white/10 px-2 py-0.5">SMKN 2</span>
-                                        <span class="rounded-md bg-white/10 px-2 py-0.5">SMKN 3</span>
-                                        <span class="rounded-md bg-white/10 px-2 py-0.5">SMKN 4</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Side: Story Copywriting (Fore Coffee Style) -->
-                        <div class="lg:col-span-6">
-                            <!-- Eyebrow Strip -->
-                            <div class="flex items-center gap-3">
-                                <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
-                                <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase dark:text-blue-300">
-                                    Tentang <strong>Scholify</strong>
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-semibold text-emerald-300">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    Aktif Realtime
                                 </span>
                             </div>
 
-                            <!-- Title -->
-                            <h1 class="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl sm:leading-[1.2] dark:text-white">
-                                Cerita Kami
-                            </h1>
+                            <div class="my-5 space-y-3.5">
+                                <div class="rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+                                    <div class="flex items-center justify-between text-xs text-blue-200">
+                                        <span>Total Penjualan Hari Ini</span>
+                                        <span class="font-bold text-white">4 Mitra Sekolah</span>
+                                    </div>
+                                    <p class="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                                        Rp 4.850.000
+                                    </p>
+                                    <div class="mt-2 flex items-center gap-2 text-[11px] text-emerald-300">
+                                        <CheckCircle2 class="h-3.5 w-3.5" />
+                                        <span>128 nota selesai tanpa selisih stok</span>
+                                    </div>
+                                </div>
 
-                            <!-- Body text -->
-                            <div class="mt-4 space-y-3.5 text-sm leading-relaxed text-slate-600 sm:text-[15px] dark:text-slate-300">
-                                <p>
-                                    Mari berkenalan dengan sistem yang dirancang dari ruang koperasi sekolah, didedikasikan untuk kebutuhan siswa, guru, dan pengurus kantin sehari-hari.
-                                </p>
-                                <p>
-                                    Scholify berawal dari pengamatan langsung di koperasi sekolah: saat bel istirahat berbunyi, puluhan siswa bergegas membeli alat tulis, buku latihan, serta makanan dan minuman. Pencatatan manual di buku kas kerap menimbulkan antrean panjang, kelelahan kasir, dan selisih stok di akhir hari.
-                                </p>
-                                <p>
-                                    Kami menghadirkan Scholify sebagai jembatan digital—menggabungkan kecepatan sistem kasir modern dengan ketelitian pencatatan multi-tenant per sekolah.
-                                </p>
+                                <div class="grid grid-cols-2 gap-3 text-xs">
+                                    <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+                                        <p class="text-blue-200/80 text-[11px]">Alat Sekolah</p>
+                                        <p class="mt-0.5 text-base font-bold text-white">320+ Item</p>
+                                    </div>
+                                    <div class="rounded-xl border border-white/10 bg-white/5 p-3">
+                                        <p class="text-blue-200/80 text-[11px]">Makanan & Minuman</p>
+                                        <p class="mt-0.5 text-base font-bold text-white">150+ Item</p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Highlights Pills -->
-                            <div class="mt-6 flex flex-wrap gap-2.5">
-                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                    <Sparkles class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                                    <span>Cepat & Ramah Siswa</span>
-                                </div>
-                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                    <Layers class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                                    <span>Pemisahan Multi-Sekolah</span>
-                                </div>
-                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                    <Clock class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                                    <span>Laporan Realtime Otomatis</span>
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-t border-white/15 pt-4 text-xs text-blue-200/90">
+                                <span>Mitra Koperasi:</span>
+                                <div class="flex flex-wrap gap-1 font-semibold text-white">
+                                    <span class="rounded bg-white/10 px-2 py-0.5 text-[11px]">SMKN 1</span>
+                                    <span class="rounded bg-white/10 px-2 py-0.5 text-[11px]">SMKN 2</span>
+                                    <span class="rounded bg-white/10 px-2 py-0.5 text-[11px]">SMKN 3</span>
+                                    <span class="rounded bg-white/10 px-2 py-0.5 text-[11px]">SMKN 4</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <!-- ========================================================= -->
-                <!-- 3. SEKSI: FILOSOFI (GRIND THE ESSENTIALS STYLE)           -->
-                <!-- ========================================================= -->
-                <section
-                    id="filosofi"
-                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10 dark:border-slate-800 dark:bg-slate-900"
-                >
-                    <div class="grid gap-8 lg:grid-cols-12 lg:gap-12">
-                        <!-- Left: Title & Concept Tag -->
-                        <div class="lg:col-span-5">
-                            <div class="flex items-center gap-3">
-                                <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
-                                <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase dark:text-blue-300">
-                                    Filosofi <strong>Kami</strong>
-                                </span>
-                            </div>
-                            <h2 class="mt-3 text-xl font-black tracking-tight text-slate-900 sm:text-3xl sm:leading-tight dark:text-white">
-                                Sederhanakan Transaksi, Majukan Koperasi Sekolah
-                            </h2>
-                            <p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-                                Setiap detik di jam istirahat sekolah sangat berharga. Kami memangkas kerumitan agar pelayanan berlangsung cepat dan tertib.
-                            </p>
-                        </div>
-
-                        <!-- Right: Editorial Narrative Paragraphs (Fore Style) -->
-                        <div class="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-[15px] lg:col-span-7 dark:text-slate-300">
-                            <p>
-                                Di lingkungan pendidikan yang dinamis, pengelolaan koperasi bukan sekadar soal jual-beli, melainkan sarana pembelajaran kewirausahaan, pelayanan kebutuhan belajar siswa, dan keteladanan transparansi finansial.
-                            </p>
-                            <p>
-                                Filosofi Scholify berpijak pada prinsip <em>"Efficiency in Every Checkout"</em>. Kami percaya bahwa kasir yang didukung teknologi tepat guna—seperti pemindaian barcode yang cepat, hitungan kembalian otomatis, dan cetak struk rapi—mampu memberikan pengalaman transaksi yang menyenangkan bagi seluruh warga sekolah.
-                            </p>
-                            <p>
-                                Tidak ada lagi pencatatan tercecer, nota hilang, atau perbedaan stok fisik dengan catatan pembukuan. Scholify menjaga integritas setiap rupiah yang masuk ke kas koperasi sekolah.
-                            </p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- ========================================================= -->
-                <!-- 4. SEKSI: ABOUT OUR PRODUCTS (FITUR-FITUR WEBSITE)        -->
-                <!-- ========================================================= -->
-                <section
-                    id="about-our-products"
-                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10 dark:border-slate-800 dark:bg-slate-900"
-                >
-                    <!-- Section Header -->
-                    <div class="text-center">
-                        <div class="inline-flex items-center gap-3">
-                            <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
-                            <span class="text-xs font-black tracking-widest text-[#0f2a5c] uppercase dark:text-blue-300">
-                                Fitur & Layanan <strong>Produk</strong>
+                    <!-- Right Side: Story Copywriting -->
+                    <div class="lg:col-span-6">
+                        <div class="flex items-center gap-2.5">
+                            <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
+                            <span class="text-xs font-black tracking-widest text-blue-700 uppercase dark:text-blue-300">
+                                Tentang <strong>Scholify</strong>
                             </span>
-                            <span class="h-[2px] w-8 rounded-full bg-[#0f2a5c] dark:bg-blue-400" />
                         </div>
-                        <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
-                            Ekosistem Kasir Terlengkap & Terpadu
+
+                        <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+                            Cerita Kami
                         </h2>
-                        <p class="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                            Semua fitur yang Anda butuhkan untuk operasional koperasi sekolah—dari meja kasir, pengadaan supplier, manajemen gudang, hingga laporan audit manajemen.
+
+                        <div class="mt-4 space-y-3.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                            <p>
+                                Mari berkenalan dengan sistem yang dirancang dari ruang koperasi sekolah, didedikasikan untuk kebutuhan siswa, guru, dan pengurus kantin sehari-hari.
+                            </p>
+                            <p>
+                                Scholify berawal dari pengamatan langsung di koperasi sekolah: saat bel istirahat berbunyi, puluhan siswa bergegas membeli alat tulis, buku latihan, serta konsumsi. Pencatatan manual kerap menimbulkan antrean panjang, kelelahan kasir, dan selisih stok di akhir hari.
+                            </p>
+                            <p>
+                                Kami menghadirkan Scholify sebagai jembatan digital—menggabungkan kecepatan sistem kasir modern dengan ketelitian pencatatan multi-tenant per sekolah.
+                            </p>
+                        </div>
+
+                        <!-- 3 Pilar Mini Cards (Squircle Layout Login Style) -->
+                        <div class="mt-6 flex flex-wrap gap-2.5">
+                            <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 shadow-sm">
+                                <Sparkles class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                <span>Cepat & Ramah Siswa</span>
+                            </div>
+                            <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 shadow-sm">
+                                <Layers class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                <span>Pemisahan Multi-Sekolah</span>
+                            </div>
+                            <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 shadow-sm">
+                                <Clock class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                <span>Laporan Realtime Otomatis</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================================= -->
+            <!-- 3. SEKSI: FILOSOFI KAMI                                       -->
+            <!-- ============================================================= -->
+            <section
+                id="filosofi"
+                class="scroll-mt-24 rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-10 dark:border-slate-800 dark:bg-slate-900/95 transition-all text-slate-900 dark:text-white"
+            >
+                <div class="grid gap-8 lg:grid-cols-12 lg:gap-12">
+                    <div class="lg:col-span-5">
+                        <div class="flex items-center gap-2.5">
+                            <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
+                            <span class="text-xs font-black tracking-widest text-blue-700 uppercase dark:text-blue-300">
+                                Filosofi <strong>Kami</strong>
+                            </span>
+                        </div>
+                        <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+                            Sederhanakan Transaksi, Majukan Koperasi Sekolah
+                        </h2>
+                        <p class="mt-3 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
+                            Setiap detik di jam istirahat sekolah sangat berharga. Kami memangkas kerumitan agar pelayanan berlangsung cepat dan tertib.
                         </p>
                     </div>
 
-                    <!-- Category Filter Tabs (Pill style) -->
-                    <div class="mt-8 flex flex-wrap items-center justify-center gap-2">
-                        <button
-                            v-for="tab in categoryTabs"
-                            :key="tab.id"
-                            type="button"
-                            :class="[
-                                'rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer',
-                                activeFeatureTab === tab.id
-                                    ? tab.id === 'unggulan'
-                                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 ring-2 ring-amber-400 font-extrabold'
-                                        : 'bg-[#0f2a5c] text-white shadow-md shadow-[#0f2a5c]/25 dark:bg-blue-600 dark:shadow-blue-900/40'
-                                    : tab.id === 'unggulan'
-                                        ? 'border border-amber-300 bg-amber-50/80 text-amber-900 hover:bg-amber-100 dark:border-amber-700/80 dark:bg-amber-950/40 dark:text-amber-300'
-                                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white',
-                            ]"
-                            @click="activeFeatureTab = tab.id"
-                        >
-                            {{ tab.label }}
-                        </button>
+                    <div class="space-y-4 text-xs sm:text-sm leading-relaxed text-slate-600 lg:col-span-7 dark:text-slate-300">
+                        <p>
+                            Di lingkungan pendidikan yang dinamis, pengelolaan koperasi bukan sekadar soal jual-beli, melainkan sarana pembelajaran kewirausahaan, pelayanan kebutuhan belajar siswa, dan keteladanan transparansi finansial.
+                        </p>
+                        <p>
+                            Filosofi Scholify berpijak pada prinsip <em>"Efficiency in Every Checkout"</em>. Kami percaya bahwa kasir yang didukung teknologi tepat guna—seperti pemindaian barcode yang cepat, hitungan kembalian otomatis, dan cetak struk rapi—mampu memberikan pengalaman transaksi yang menyenangkan bagi seluruh warga sekolah.
+                        </p>
+                        <p>
+                            Tidak ada lagi pencatatan tercecer, nota hilang, atau perbedaan stok fisik dengan catatan pembukuan. Scholify menjaga integritas setiap rupiah yang masuk ke kas koperasi sekolah.
+                        </p>
                     </div>
+                </div>
+            </section>
 
-                    <!-- Feature Cards Grid -->
-                    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <!-- ============================================================= -->
+            <!-- 4. SEKSI: FITUR-FITUR PRODUK (ABOUT OUR PRODUCTS)             -->
+            <!-- ============================================================= -->
+            <section
+                id="about-our-products"
+                class="scroll-mt-24 rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-10 dark:border-slate-800 dark:bg-slate-900/95 transition-all text-slate-900 dark:text-white"
+            >
+                <div class="text-center">
+                    <div class="inline-flex items-center gap-2.5">
+                        <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
+                        <span class="text-xs font-black tracking-widest text-blue-700 uppercase dark:text-blue-300">
+                            Fitur & Layanan <strong>Produk</strong>
+                        </span>
+                        <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
+                    </div>
+                    <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+                        Ekosistem Kasir Terlengkap & Terpadu
+                    </h2>
+                    <p class="mx-auto mt-2.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                        Semua fitur yang Anda butuhkan untuk operasional koperasi sekolah—dari meja kasir, pengadaan supplier, manajemen gudang, hingga laporan audit manajemen.
+                    </p>
+                </div>
+
+                <!-- Category Filter Tabs (Pill style) -->
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                        v-for="tab in categoryTabs"
+                        :key="tab.id"
+                        type="button"
+                        :class="[
+                            'rounded-full px-4 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                            activeFeatureTab === tab.id
+                                ? tab.id === 'unggulan'
+                                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 ring-2 ring-amber-400 font-extrabold'
+                                        : 'bg-[#0c2356] text-white shadow-md shadow-[#0c2356]/25 dark:bg-blue-600 dark:shadow-blue-900/40'
+                                : tab.id === 'unggulan'
+                                    ? 'border border-amber-300 bg-amber-50/80 text-amber-900 hover:bg-amber-100 dark:border-amber-700/80 dark:bg-amber-950/40 dark:text-amber-300'
+                                    : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white',
+                        ]"
+                        @click="activeFeatureTab = tab.id"
+                    >
+                        {{ tab.label }}
+                    </button>
+                </div>
+
+                <!-- Feature Cards Grid (Squircle Layout Login Style) -->
+                <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div
+                        v-for="feat in filteredFeatures()"
+                        :key="feat.id"
+                        class="group relative flex flex-col justify-between rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                        :class="
+                            feat.isUnggulan
+                                ? 'border-amber-300/80 bg-gradient-to-b from-amber-50/30 via-white to-white hover:border-amber-400 dark:border-amber-700/60 dark:from-amber-950/20 dark:via-slate-800/60 dark:to-slate-800/60 dark:hover:border-amber-500'
+                                : 'border-slate-200/80 bg-white hover:border-blue-200 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-blue-500/50 dark:hover:bg-slate-800'
+                        "
+                    >
+                        <div>
+                            <!-- Top Row: Squircle Gradient Icon & Badge -->
+                            <div class="flex items-center justify-between">
+                                <div
+                                    class="flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-md transition-transform group-hover:scale-105"
+                                    :class="
+                                        feat.isUnggulan
+                                            ? 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-500/25 border border-amber-300/40'
+                                            : 'bg-gradient-to-br from-[#0c2356] to-[#1e58c8] shadow-blue-900/30 border border-blue-400/20'
+                                    "
+                                >
+                                    <component :is="feat.icon" class="h-5 w-5" />
+                                </div>
+                                <span
+                                    class="rounded-full px-3 py-1 text-[11px] font-bold"
+                                    :class="
+                                        feat.isUnggulan
+                                            ? 'border border-amber-300/80 bg-amber-100 text-amber-900 dark:border-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                                            : 'bg-blue-50 text-[#0c2356] dark:bg-blue-950/60 dark:text-blue-300'
+                                    "
+                                >
+                                    {{ feat.badge }}
+                                </span>
+                            </div>
+
+                            <h3 class="mt-4 text-base font-bold tracking-tight text-slate-900 dark:text-white">
+                                {{ feat.title }}
+                            </h3>
+                            <p class="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                {{ feat.desc }}
+                            </p>
+                        </div>
+
+                        <!-- Highlights Checklist -->
                         <div
-                            v-for="feat in filteredFeatures()"
-                            :key="feat.id"
-                            class="group relative flex flex-col justify-between rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                            class="mt-4 border-t pt-4"
                             :class="
                                 feat.isUnggulan
-                                    ? 'border-amber-300/80 bg-gradient-to-b from-amber-50/30 via-white to-white hover:border-amber-400 dark:border-amber-700/60 dark:from-amber-950/20 dark:via-slate-800/60 dark:to-slate-800/60 dark:hover:border-amber-500'
-                                    : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-blue-500/50 dark:hover:bg-slate-800'
+                                    ? 'border-amber-200/60 dark:border-amber-900/40'
+                                    : 'border-slate-100 dark:border-slate-700/60'
                             "
                         >
-                            <div>
-                                <!-- Top Row: Icon & Badge -->
-                                <div class="flex items-center justify-between">
-                                    <div
-                                        class="flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-md transition-transform group-hover:scale-105"
+                            <ul class="space-y-1.5">
+                                <li
+                                    v-for="(point, pIdx) in feat.highlights"
+                                    :key="pIdx"
+                                    class="flex items-center gap-2 text-[11px] font-medium text-slate-700 dark:text-slate-300"
+                                >
+                                    <CheckCircle2
+                                        class="h-3 w-3 shrink-0"
                                         :class="
                                             feat.isUnggulan
-                                                ? 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-500/25 dark:from-amber-500 dark:to-amber-600'
-                                                : 'bg-[#0f2a5c] shadow-[#0f2a5c]/20 dark:bg-blue-600'
+                                                ? 'text-amber-600 dark:text-amber-400'
+                                                : 'text-blue-600 dark:text-blue-400'
                                         "
-                                    >
-                                        <component :is="feat.icon" class="h-5 w-5" />
-                                    </div>
-                                    <span
-                                        class="rounded-full px-3 py-1 text-[11px] font-bold"
-                                        :class="
-                                            feat.isUnggulan
-                                                ? 'border border-amber-300/80 bg-amber-100 text-amber-900 dark:border-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
-                                                : 'bg-blue-50 text-[#0f2a5c] dark:bg-blue-950/60 dark:text-blue-300'
-                                        "
-                                    >
-                                        {{ feat.badge }}
-                                    </span>
-                                </div>
+                                    />
+                                    <span>{{ point }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
-                                <!-- Title & Description -->
-                                <h3 class="mt-4 text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                                    {{ feat.title }}
-                                </h3>
-                                <p class="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                                    {{ feat.desc }}
-                                </p>
+                <!-- Standar Kualitas Banner -->
+                <div class="mt-10 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-800/40">
+                    <div class="grid items-center gap-6 md:grid-cols-12">
+                        <div class="md:col-span-8">
+                            <div class="flex items-center gap-2.5">
+                                <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
+                                <span class="text-xs font-bold tracking-wider text-blue-700 uppercase dark:text-blue-400">
+                                    Standar Kualitas Sistem
+                                </span>
                             </div>
-
-                            <!-- Feature Highlights Checklist -->
-                            <div
-                                class="mt-4 border-t pt-4"
-                                :class="
-                                    feat.isUnggulan
-                                        ? 'border-amber-200/60 dark:border-amber-900/40'
-                                        : 'border-slate-100 dark:border-slate-700/60'
-                                "
-                            >
-                                <ul class="space-y-1.5">
-                                    <li
-                                        v-for="(point, pIdx) in feat.highlights"
-                                        :key="pIdx"
-                                        class="flex items-center gap-2 text-[11px] font-medium text-slate-700 dark:text-slate-300"
-                                    >
-                                        <CheckCircle2
-                                            class="h-3 w-3 shrink-0"
-                                            :class="
-                                                feat.isUnggulan
-                                                    ? 'text-amber-600 dark:text-amber-400'
-                                                    : 'text-blue-600 dark:text-blue-400'
-                                            "
-                                        />
-                                        <span>{{ point }}</span>
-                                    </li>
-                                </ul>
+                            <h3 class="mt-1.5 text-lg font-black text-slate-900 sm:text-xl dark:text-white">
+                                Akurat, Aman, & Tersinkronisasi Otomatis
+                            </h3>
+                            <p class="mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                Scholify memastikan pembukuan kasir terisolasi per sekolah mitra. Data transaksi penjualan, pembelian stok, dan riwayat pelanggan tersimpan aman di database dengan integritas relasi yang ketat.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-start gap-3 md:col-span-4 md:justify-end">
+                            <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                                <p class="text-lg font-black text-[#0c2356] dark:text-blue-400">100%</p>
+                                <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Pencatatan Realtime</p>
+                            </div>
+                            <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                                <p class="text-lg font-black text-[#0c2356] dark:text-blue-400">4+</p>
+                                <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Sekolah Mitra</p>
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    <!-- Additional Standards Banner (Halal/Quality Style in Fore) -->
-                    <div class="mt-10 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-800/40">
-                        <div class="grid items-center gap-6 md:grid-cols-12">
-                            <div class="md:col-span-8">
-                                <div class="flex items-center gap-3">
-                                    <span class="h-[2px] w-6 rounded-full bg-blue-600 dark:bg-blue-400" />
-                                    <span class="text-xs font-bold tracking-wider text-blue-700 uppercase dark:text-blue-400">
-                                        Standar Kualitas Sistem
-                                    </span>
-                                </div>
-                                <h3 class="mt-1.5 text-lg font-black text-slate-900 sm:text-xl dark:text-white">
-                                    Akurat, Aman, & Tersinkronisasi Otomatis
-                                </h3>
-                                <p class="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
-                                    Scholify memastikan pembukuan kasir terisolasi per sekolah mitra. Data transaksi penjualan, pembelian stok, dan riwayat pelanggan tersimpan aman di database dengan integritas relasi yang ketat.
-                                </p>
-                            </div>
-                            <div class="flex flex-wrap items-center justify-start gap-3 md:col-span-4 md:justify-end">
-                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                                    <p class="text-lg font-black text-[#0f2a5c] dark:text-blue-400">100%</p>
-                                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Pencatatan Realtime</p>
-                                </div>
-                                <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                                    <p class="text-lg font-black text-[#0f2a5c] dark:text-blue-400">4+</p>
-                                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Sekolah Mitra</p>
-                                </div>
-                            </div>
-                        </div>
+            <!-- ============================================================= -->
+            <!-- 5. CALL TO ACTION BANNER (MENGADOPSI GRADASI ELEGAN LOGIN)    -->
+            <!-- ============================================================= -->
+            <section
+                class="rounded-3xl border border-white/20 bg-gradient-to-r from-white/15 to-white/5 p-8 text-center text-white shadow-2xl backdrop-blur-md sm:p-10"
+            >
+                <div class="mx-auto max-w-xl">
+                    <span class="inline-block rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-cyan-200 backdrop-blur-md">
+                        Mulai Bersama Scholify
+                    </span>
+                    <h2 class="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                        Siap Mengoptimalkan Koperasi Sekolah Anda?
+                    </h2>
+                    <p class="mt-2 text-xs leading-relaxed text-blue-100/90 sm:text-sm">
+                        Masuk ke aplikasi kasir untuk mulai mengelola penjualan, stok barang, dan pencetakan struk transaksi hari ini.
+                    </p>
+                    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                        <Link
+                            href="/login"
+                            class="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-xs font-bold uppercase tracking-wider text-[#0c2356] shadow-lg transition hover:bg-blue-50 active:scale-95"
+                        >
+                            <span>Masuk ke Aplikasi Kasir</span>
+                            <ArrowRight class="h-4 w-4" />
+                        </Link>
+                        <button
+                            type="button"
+                            class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+                            @click="scrollToSection('cerita-kami')"
+                        >
+                            <span>Kembali ke Atas</span>
+                        </button>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- ========================================================= -->
-                <!-- 5. CALL TO ACTION BANNER (SELARAS DENGAN TEMA LOGIN)      -->
-                <!-- ========================================================= -->
-                <section
-                    class="rounded-3xl border border-white/20 bg-gradient-to-r from-white/10 to-white/5 p-8 text-center text-white shadow-2xl backdrop-blur-md sm:p-10"
-                >
-                    <div class="mx-auto max-w-xl">
-                        <span class="inline-block rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-blue-200 backdrop-blur-md">
-                            Mulai Bersama Scholify
-                        </span>
-                        <h2 class="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                            Siap Mengoptimalkan Koperasi Sekolah Anda?
-                        </h2>
-                        <p class="mt-2 text-xs leading-relaxed text-blue-100/90 sm:text-sm">
-                            Masuk ke aplikasi kasir untuk mulai mengelola penjualan, stok barang, dan pencetakan struk transaksi hari ini.
-                        </p>
-                        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-                            <Link
-                                href="/login"
-                                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-lg transition hover:bg-blue-500 active:scale-95"
-                            >
-                                <span>Masuk ke Aplikasi Kasir</span>
-                                <ArrowRight class="h-4 w-4" />
-                            </Link>
-                            <button
-                                type="button"
-                                class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
-                                @click="scrollToSection('cerita-kami')"
-                            >
-                                <span>Kembali ke Atas</span>
-                            </button>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <!-- ========================================================= -->
-            <!-- 6. FOOTER (PERSIS GAYA FOOTER DI HALAMAN LOGIN)           -->
-            <!-- ========================================================= -->
-            <footer class="text-center text-xs text-blue-200/70">
+            <!-- ============================================================= -->
+            <!-- 6. FOOTER (PERSIS GAYA FOOTER DI HALAMAN LOGIN)               -->
+            <!-- ============================================================= -->
+            <footer class="text-center text-xs text-blue-200/80 pt-4">
                 <p class="font-medium">
-                    Scholify — Kasir Alat-Alat Sekolah, Makanan & Minuman
+                    © {{ new Date().getFullYear() }} Scholify — Kasir Alat-Alat Sekolah, Makanan & Minuman
                 </p>
-                <p class="mt-1 text-[11px] text-blue-200/50">
-                    SMKN 1 · SMKN 2 · SMKN 3 · SMKN 4 Tasikmalaya
-                </p>
+                <div class="mt-1.5 flex items-center justify-center gap-1.5 text-[11px] font-bold text-cyan-200">
+                    <School class="h-3.5 w-3.5" />
+                    <span>SMKN 1 · SMKN 2 · SMKN 3 · SMKN 4 Tasikmalaya</span>
+                </div>
             </footer>
         </div>
     </div>
@@ -775,5 +871,25 @@ onMounted(() => {
 <style>
 html {
     scroll-behavior: smooth;
+}
+
+/* Kursor Ketik Halus & Berpendar (Smooth Blink) */
+.typewriter-cursor {
+    animation: cursorSmoothBlink 0.95s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes cursorSmoothBlink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .typewriter-cursor {
+        animation: none !important;
+    }
 }
 </style>

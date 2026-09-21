@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { Camera, Loader2, Pencil, Plus, Power, ScanBarcode, ShoppingBag } from '@lucide/vue';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import BarcodeScannerModal from '@/components/pos/BarcodeScannerModal.vue';
 import CategoryFilter from '@/components/pos/CategoryFilter.vue';
@@ -44,6 +44,27 @@ const form = ref<Record<string, any>>({});
 const kategoriList = ref<Kategori[]>([]);
 const supplierList = ref<Supplier[]>([]);
 
+const baseSatuanList = ['pcs', 'pak', 'box', 'renceng', 'botol', 'porsi', 'bungkus'];
+const customSatuanMode = ref(false);
+
+const satuanList = computed(() => {
+    const current = form.value.satuan ? String(form.value.satuan).trim() : '';
+    if (current && !baseSatuanList.includes(current) && current !== '__custom__') {
+        return [current, ...baseSatuanList];
+    }
+    return baseSatuanList;
+});
+
+function onSatuanChange(e: Event) {
+    const val = (e.target as HTMLSelectElement).value;
+    if (val === '__custom__') {
+        customSatuanMode.value = true;
+        form.value.satuan = '';
+    } else {
+        form.value.satuan = val;
+    }
+}
+
 const scannerOpen = ref(false);
 const scannerMode = ref<'form' | 'search'>('form');
 const lookingUpBarcode = ref(false);
@@ -81,6 +102,7 @@ function onSearch() {
 
 function bukaTambah() {
     editing.value = null;
+    customSatuanMode.value = false;
     form.value = {
         id_sekolah: pos.idSekolah,
         satuan: 'pcs',
@@ -159,6 +181,7 @@ function onBarcodeDetected(code: string) {
 
 function bukaEdit(b: Barang) {
     editing.value = b;
+    customSatuanMode.value = false;
     form.value = { ...b };
     showForm.value = true;
 }
@@ -527,16 +550,38 @@ watch([() => pos.idSekolah, idKelompok], () => {
                     </label>
                 </div>
 
-                <!-- Satuan & Stok Awal (2 Kolom) -->
+                <!-- Satuan & Stok Awal (2 Kolom Sejajar & Ramping) -->
                 <div class="grid grid-cols-2 gap-2 sm:gap-3">
                     <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         Satuan Unit*
-                        <input
-                            v-model="form.satuan"
-                            required
-                            placeholder="Contoh: pcs, porsi, botol"
-                            class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs sm:text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        />
+                        <div class="mt-1">
+                            <select
+                                v-if="!customSatuanMode"
+                                :value="form.satuan || 'pcs'"
+                                required
+                                class="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                @change="onSatuanChange"
+                            >
+                                <option v-for="s in satuanList" :key="s" :value="s">{{ s }}</option>
+                                <option value="__custom__">+ Lainnya (Ketik Manual)…</option>
+                            </select>
+                            <div v-else class="relative w-full">
+                                <input
+                                    v-model="form.satuan"
+                                    required
+                                    placeholder="Ketik satuan…"
+                                    class="w-full rounded-xl border border-blue-500 bg-white px-3 py-2 pr-14 text-xs sm:text-sm text-slate-800 dark:border-blue-500 dark:bg-slate-800 dark:text-slate-100"
+                                />
+                                <button
+                                    type="button"
+                                    class="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-lg px-2 py-1 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50"
+                                    title="Pilih dari daftar"
+                                    @click="customSatuanMode = false; if (!form.satuan) form.satuan = 'pcs';"
+                                >
+                                    Daftar
+                                </button>
+                            </div>
+                        </div>
                     </label>
                     <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         Stok Awal*

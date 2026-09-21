@@ -293,23 +293,63 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="min-h-screen w-full overflow-x-hidden bg-slate-100 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+    <div class="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] text-slate-900 transition-colors duration-200 dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] dark:text-slate-100">
+        <!-- Background Geometric Curves & Ambient Glows for Content Area (Smooth, Elegan, Renggang & Tidak Terlalu Ramai) -->
+        <div class="pointer-events-none fixed inset-0 overflow-hidden z-0">
+            <!-- Subtle SVG Curves -->
+            <div class="absolute inset-0 opacity-[0.08] dark:opacity-[0.05]">
+                <svg class="h-full w-full" viewBox="0 0 1440 900" fill="none">
+                    <!-- Busur anggun kanan atas (tidak ramai, terpisah dengan renggang & lembut) -->
+                    <circle cx="1250" cy="180" r="340" stroke="white" stroke-width="1.2" stroke-dasharray="6 8" />
+                    <circle cx="1250" cy="180" r="580" stroke="white" stroke-width="1.5" />
+                    <circle cx="1250" cy="180" r="880" stroke="white" stroke-width="1" stroke-dasharray="10 10" />
+
+                    <!-- Busur lembut sudut kiri bawah (sangat halus) -->
+                    <circle cx="280" cy="800" r="420" stroke="white" stroke-width="1" stroke-dasharray="8 8" />
+                    <circle cx="280" cy="800" r="680" stroke="white" stroke-width="1.2" />
+                </svg>
+            </div>
+
+            <!-- Ambient Glow Orbs yang menyatu dengan Sidebar dan Header -->
+            <div class="absolute top-1/4 right-1/6 h-96 w-96 rounded-full bg-cyan-400/10 blur-3xl" />
+            <div class="absolute bottom-1/4 left-1/3 h-80 w-80 rounded-full bg-blue-400/10 blur-3xl" />
+        </div>
+
         <!-- Sidebar desktop -->
         <aside
-            class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-[#0f2a5c] text-white transition-colors duration-200 md:flex dark:border-r dark:border-slate-800/80 dark:bg-[#071328]"
+            class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-hidden bg-gradient-to-b from-[#0c2356] via-[#143f91] to-[#1e58c8] text-white shadow-2xl border-r border-white/10 transition-colors duration-200 md:flex dark:border-r dark:border-white/10 dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757]"
         >
-            <div class="flex items-center gap-2 px-5 pt-6 pb-4">
-                <img
-                    src="/logoScholify.png"
-                    alt="Logo Scholify"
-                    class="h-10 w-10 rounded-xl bg-white object-contain p-1 shadow-sm"
-                />
+            <!-- Background Decorative Radial Curves & Geometric Accents (Identik dengan Login) -->
+            <div class="pointer-events-none absolute inset-0 opacity-15 overflow-hidden">
+                <svg class="h-full w-full" viewBox="0 0 300 800" fill="none" preserveAspectRatio="none">
+                    <circle cx="50" cy="120" r="140" stroke="white" stroke-width="1.5" stroke-dasharray="4 6" />
+                    <circle cx="50" cy="120" r="220" stroke="white" stroke-width="1.5" />
+                    <circle cx="50" cy="120" r="300" stroke="white" stroke-width="1" stroke-dasharray="8 8" />
+                    <circle cx="50" cy="120" r="380" stroke="white" stroke-width="1" />
+                </svg>
+            </div>
+
+            <!-- Ambient Glow Orbs -->
+            <div class="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div class="pointer-events-none absolute bottom-12 -right-12 h-44 w-44 rounded-full bg-blue-400/20 blur-3xl" />
+
+            <!-- Brand Header -->
+            <div class="relative z-10 flex items-center gap-3 px-5 pt-6 pb-4 border-b border-white/10">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-lg shadow-black/20 border border-white/25 transition-transform hover:scale-105">
+                    <img
+                        src="/logoScholify.png"
+                        alt="Logo Scholify"
+                        class="h-full w-full object-contain"
+                    />
+                </div>
                 <div>
-                    <p class="text-base font-bold tracking-tight">Scholify</p>
-                    <p class="text-[11px] text-blue-200 dark:text-blue-300/80">Smart School POS</p>
+                    <p class="text-base font-black tracking-tight text-white leading-none">Scholify</p>
+                    <p class="text-[9px] font-bold tracking-widest text-blue-200 uppercase mt-1">Smart School POS</p>
                 </div>
             </div>
-            <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+
+            <!-- Navigasi Menu -->
+            <nav class="relative z-10 flex-1 space-y-1 overflow-y-auto px-3 py-3">
                 <template v-if="!pos.me">
                     <div
                         v-for="i in 6"
@@ -323,10 +363,10 @@ onUnmounted(() => {
                         :key="m.key"
                         :href="m.href"
                         :class="[
-                            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
+                            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition active-press',
                             currentUrl.startsWith(m.href)
-                                ? 'bg-white text-[#0f2a5c] shadow dark:bg-blue-600 dark:text-white'
-                                : 'text-blue-100 hover:bg-white/10 dark:hover:bg-white/5',
+                                ? 'bg-white text-[#0c2356] font-bold shadow-lg shadow-black/15'
+                                : 'text-blue-100 hover:bg-white/15 hover:text-white',
                         ]"
                     >
                         <component :is="m.icon" class="h-4.5 w-4.5 shrink-0" />
@@ -334,25 +374,27 @@ onUnmounted(() => {
                     </Link>
                 </template>
             </nav>
-            <div class="border-t border-white/10 p-3">
+
+            <!-- User Profile Bottom Bar -->
+            <div class="relative z-10 border-t border-white/15 bg-black/15 p-3 backdrop-blur-md">
                 <div class="relative">
                     <button
                         type="button"
-                        class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/10"
+                        class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/10 transition cursor-pointer"
                         @click="showProfile = !showProfile"
                     >
                         <div
-                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold text-white"
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-gradient-to-br from-cyan-400/30 to-blue-500/30 text-sm font-bold text-white shadow-md backdrop-blur-md"
                         >
                             {{ profileInitials || 'U' }}
                         </div>
                         <div class="min-w-0 flex-1">
                             <p
-                                class="truncate text-sm font-semibold text-white"
+                                class="truncate text-sm font-bold text-white"
                             >
                                 {{ pos.me?.nama_lengkap ?? 'Memuat…' }}
                             </p>
-                            <p class="truncate text-[11px] text-blue-200 dark:text-blue-300/80">
+                            <p class="truncate text-[10px] font-medium text-blue-200">
                                 {{
                                     pos.me?.sekolah?.nama_sekolah ??
                                     pos.sekolahAktif?.nama_sekolah ??
@@ -374,7 +416,7 @@ onUnmounted(() => {
                     >
                         <div
                             v-if="showProfile"
-                            class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                            class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
                         >
                             <button
                                 type="button"
@@ -425,33 +467,52 @@ onUnmounted(() => {
                         @click="sidebarOpen = false"
                     />
                     <aside
-                        class="absolute inset-y-0 left-0 flex w-72 flex-col bg-[#0f2a5c] text-white shadow-xl transition-colors duration-200 dark:border-r dark:border-slate-800/80 dark:bg-[#071328] animate-in-slide-left"
+                        class="absolute inset-y-0 left-0 flex w-72 flex-col overflow-hidden bg-gradient-to-b from-[#0c2356] via-[#143f91] to-[#1e58c8] text-white shadow-2xl border-r border-white/10 transition-colors duration-200 dark:border-r dark:border-white/10 dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] animate-in-slide-left"
                     >
+                        <!-- Background Decorative Radial Curves & Geometric Accents (Identik dengan Login) -->
+                        <div class="pointer-events-none absolute inset-0 opacity-15 overflow-hidden">
+                            <svg class="h-full w-full" viewBox="0 0 350 800" fill="none" preserveAspectRatio="none">
+                                <circle cx="50" cy="120" r="140" stroke="white" stroke-width="1.5" stroke-dasharray="4 6" />
+                                <circle cx="50" cy="120" r="220" stroke="white" stroke-width="1.5" />
+                                <circle cx="50" cy="120" r="300" stroke="white" stroke-width="1" stroke-dasharray="8 8" />
+                                <circle cx="50" cy="120" r="380" stroke="white" stroke-width="1" />
+                            </svg>
+                        </div>
+
+                        <!-- Ambient Glow Orbs -->
+                        <div class="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl" />
+                        <div class="pointer-events-none absolute bottom-12 -right-12 h-44 w-44 rounded-full bg-blue-400/20 blur-3xl" />
+
+                        <!-- Brand Header -->
                         <div
-                            class="flex items-center justify-between px-5 pt-6 pb-4"
+                            class="relative z-10 flex items-center justify-between px-5 pt-6 pb-4 border-b border-white/10"
                         >
-                            <div class="flex items-center gap-2">
-                                <img
-                                    src="/logoScholify.png"
-                                    alt="Logo Scholify"
-                                    class="h-10 w-10 rounded-xl bg-white object-contain p-1 shadow-sm"
-                                />
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 shadow-lg shadow-black/20 border border-white/25">
+                                    <img
+                                        src="/logoScholify.png"
+                                        alt="Logo Scholify"
+                                        class="h-full w-full object-contain"
+                                    />
+                                </div>
                                 <div>
-                                    <p class="text-base font-bold tracking-tight">Scholify</p>
-                                    <p class="text-[11px] text-blue-200 dark:text-blue-300/80">
+                                    <p class="text-base font-black tracking-tight text-white leading-none">Scholify</p>
+                                    <p class="text-[9px] font-bold tracking-widest text-blue-200 uppercase mt-1">
                                         Smart School POS
                                     </p>
                                 </div>
                             </div>
                             <button
                                 type="button"
-                                class="rounded-lg p-1.5 hover:bg-white/10 active-press"
+                                class="rounded-xl p-1.5 hover:bg-white/10 active-press transition text-blue-200 hover:text-white cursor-pointer"
                                 @click="sidebarOpen = false"
                             >
                                 <X class="h-5 w-5" />
                             </button>
                         </div>
-                        <nav class="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+
+                        <!-- Navigasi Menu Mobile -->
+                        <nav class="relative z-10 flex-1 space-y-1 overflow-y-auto px-3 py-3">
                             <template v-if="!pos.me">
                                 <div
                                     v-for="i in 6"
@@ -465,10 +526,10 @@ onUnmounted(() => {
                                     :key="m.key"
                                     :href="m.href"
                                     :class="[
-                                        'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition active-press',
+                                        'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition active-press',
                                         currentUrl.startsWith(m.href)
-                                            ? 'bg-white text-[#0f2a5c] dark:bg-blue-600 dark:text-white'
-                                            : 'text-blue-100 hover:bg-white/10 dark:hover:bg-white/5',
+                                            ? 'bg-white text-[#0c2356] font-bold shadow-lg shadow-black/15'
+                                            : 'text-blue-100 hover:bg-white/15 hover:text-white',
                                     ]"
                                     @click="sidebarOpen = false"
                                 >
@@ -480,25 +541,27 @@ onUnmounted(() => {
                                 </Link>
                             </template>
                         </nav>
-                        <div class="border-t border-white/10 p-3">
+
+                        <!-- User Profile Bottom Bar Mobile -->
+                        <div class="relative z-10 border-t border-white/15 bg-black/15 p-3 backdrop-blur-md">
                             <div class="relative">
                                 <button
                                     type="button"
-                                    class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/10 active-press"
+                                    class="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/10 transition cursor-pointer active-press"
                                     @click="showProfile = !showProfile"
                                 >
                                     <div
-                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 text-sm font-bold text-white"
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-gradient-to-br from-cyan-400/30 to-blue-500/30 text-sm font-bold text-white shadow-md backdrop-blur-md"
                                     >
                                         {{ profileInitials || 'U' }}
                                     </div>
                                     <div class="min-w-0 flex-1">
                                         <p
-                                            class="truncate text-sm font-semibold text-white"
+                                            class="truncate text-sm font-bold text-white"
                                         >
                                             {{ pos.me?.nama_lengkap ?? 'Memuat…' }}
                                         </p>
-                                        <p class="truncate text-[11px] text-blue-200 dark:text-blue-300/80">
+                                        <p class="truncate text-[10px] font-medium text-blue-200">
                                             {{
                                                 pos.me?.sekolah?.nama_sekolah ??
                                                 pos.sekolahAktif?.nama_sekolah ??
@@ -520,7 +583,7 @@ onUnmounted(() => {
                                 >
                                     <div
                                         v-if="showProfile"
-                                        class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                                        class="absolute right-0 bottom-full left-0 mb-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
                                     >
                                         <button
                                             type="button"
@@ -558,17 +621,18 @@ onUnmounted(() => {
             </Transition>
         </Teleport>
 
-        <div class="min-w-0 w-full overflow-x-hidden md:pl-60">
-            <!-- Header -->
+        <div class="min-w-0 w-full md:pl-60">
+            <!-- Header (Menyatu Alami dengan Layout Latar Konten) -->
             <header
-                class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900/95"
+                class="sticky top-0 z-30 border-b border-white/10 bg-[#0c2356]/40 backdrop-blur-md text-white transition-colors duration-200 dark:border-white/10 dark:bg-[#061226]/50"
             >
-                <div class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 min-w-0">
+
+                <div class="relative z-10 flex items-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 min-w-0">
                     <button
                         v-if="showBack"
                         type="button"
                         title="Kembali"
-                        class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
+                        class="rounded-xl p-2 text-blue-100 hover:bg-white/15 hover:text-white transition active-press md:hidden cursor-pointer"
                         @click="goBack"
                     >
                         <ArrowLeft class="h-5 w-5" />
@@ -576,16 +640,16 @@ onUnmounted(() => {
                     <button
                         type="button"
                         title="Buka menu"
-                        class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
+                        class="rounded-xl p-2 text-blue-100 hover:bg-white/15 hover:text-white transition active-press md:hidden cursor-pointer"
                         @click="sidebarOpen = true"
                     >
                         <Menu class="h-5 w-5" />
                     </button>
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-bold text-slate-900 dark:text-white">
+                        <p class="truncate text-sm font-black tracking-tight text-white leading-tight">
                             Scholify
                         </p>
-                        <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        <p class="truncate text-[11px] font-medium text-blue-200/90 mt-0.5">
                             {{ pos.sekolahAktif?.nama_sekolah ?? '…' }} ·
                             {{ pos.me?.nama_lengkap ?? '…' }} ({{
                                 pos.ownRole
@@ -597,7 +661,7 @@ onUnmounted(() => {
                         <select
                             :value="pos.idSekolah"
                             title="Pindah sekolah"
-                            class="max-w-24 sm:max-w-52 truncate rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            class="max-w-24 sm:max-w-52 truncate rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
                             @change="
                                 pos.setCtxSekolah(
                                     Number(
@@ -611,6 +675,7 @@ onUnmounted(() => {
                                 v-for="s in pos.sekolahList"
                                 :key="s.id_sekolah"
                                 :value="s.id_sekolah"
+                                class="bg-[#0c2356] text-white dark:bg-slate-900"
                             >
                                 {{ s.nama_sekolah }}
                             </option>
@@ -618,16 +683,16 @@ onUnmounted(() => {
                         <select
                             :value="pos.effectiveRole"
                             title="Tampilan peran"
-                            class="max-w-20 sm:max-w-44 truncate rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            class="max-w-20 sm:max-w-44 truncate rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
                             @change="
                                 pos.setCtxRole(
                                     ($event.target as HTMLSelectElement).value,
                                 )
                             "
                         >
-                            <option value="super admin">Super Admin</option>
-                            <option value="admin">Admin</option>
-                            <option value="kasir">Kasir</option>
+                            <option value="super admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Super Admin</option>
+                            <option value="admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Admin</option>
+                            <option value="kasir" class="bg-[#0c2356] text-white dark:bg-slate-900">Kasir</option>
                         </select>
                     </template>
                     <!-- Super admin: pilih tampilan peran (sekolah terkunci) -->
@@ -635,16 +700,16 @@ onUnmounted(() => {
                         <select
                             :value="pos.effectiveRole"
                             title="Tampilan peran"
-                            class="max-w-24 sm:max-w-44 truncate rounded-lg border border-slate-200 bg-white px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            class="max-w-24 sm:max-w-44 truncate rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
                             @change="
                                 pos.setCtxRole(
                                     ($event.target as HTMLSelectElement).value,
                                 )
                             "
                         >
-                            <option value="super admin">Super Admin</option>
-                            <option value="admin">Admin</option>
-                            <option value="kasir">Kasir</option>
+                            <option value="super admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Super Admin</option>
+                            <option value="admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Admin</option>
+                            <option value="kasir" class="bg-[#0c2356] text-white dark:bg-slate-900">Kasir</option>
                         </select>
                     </template>
 
@@ -652,11 +717,11 @@ onUnmounted(() => {
                     <button
                         type="button"
                         :title="isDark ? 'Beralih ke Mode Terang (Light Mode)' : 'Beralih ke Mode Gelap (Dark Mode)'"
-                        class="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                        class="rounded-xl p-2 text-blue-100 hover:bg-white/15 hover:text-white transition cursor-pointer backdrop-blur-md active-press"
                         @click="toggleDarkMode"
                     >
-                        <Sun v-if="isDark" class="h-5 w-5 text-amber-400 transition transform rotate-0 hover:rotate-45" />
-                        <Moon v-else class="h-5 w-5 text-slate-600 transition transform hover:-rotate-12" />
+                        <Sun v-if="isDark" class="h-5 w-5 text-amber-300 transition transform rotate-0 hover:rotate-45" />
+                        <Moon v-else class="h-5 w-5 text-cyan-200 transition transform hover:-rotate-12" />
                     </button>
 
                     <!-- Notifikasi Dropdown Popover (Void & Stok) -->
@@ -664,18 +729,18 @@ onUnmounted(() => {
                         <button
                             type="button"
                             title="Pemberitahuan Sistem"
-                            class="relative cursor-pointer rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                            class="relative cursor-pointer rounded-xl p-2 text-blue-100 transition hover:bg-white/15 hover:text-white active-press"
                             :class="{
-                                'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400':
+                                'bg-white/20 text-white ring-1 ring-white/30':
                                     showNotification,
                             }"
-                            @click="showNotification = !showNotification"
+                            @click.stop="showNotification = !showNotification"
                         >
                             <Bell class="h-5 w-5" />
                             <span
                                 v-if="totalNotifCount > 0"
                                 :class="[
-                                    'absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900',
+                                    'absolute -top-0.5 -right-0.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[#0c2356]',
                                     myPendingVoids.length > 0
                                         ? 'bg-rose-600 animate-bounce'
                                         : 'bg-red-600 animate-pulse',
@@ -699,7 +764,7 @@ onUnmounted(() => {
                         >
                             <div
                                 v-if="showNotification"
-                                class="absolute right-0 top-full mt-2 w-80 sm:w-96 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-50 dark:border-slate-800 dark:bg-slate-900"
+                                class="absolute right-0 top-full mt-2 w-80 sm:w-96 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl z-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
                             >
                                 <!-- Header Popover -->
                                 <div
@@ -1010,7 +1075,7 @@ onUnmounted(() => {
                     <button
                         type="button"
                         title="Keluar"
-                        class="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                        class="rounded-xl p-2 text-rose-200 hover:bg-rose-500/20 hover:text-white transition cursor-pointer active-press"
                         @click="logout"
                     >
                         <LogOut class="h-5 w-5" />
@@ -1018,7 +1083,7 @@ onUnmounted(() => {
                 </div>
             </header>
 
-            <main class="w-full min-w-0 px-3 sm:px-6 pt-4 pb-24 md:pb-6 animate-fade-in">
+            <main class="relative z-10 w-full min-w-0 px-3 sm:px-6 pt-4 pb-24 md:pb-6 animate-fade-in">
                 <slot />
             </main>
         </div>

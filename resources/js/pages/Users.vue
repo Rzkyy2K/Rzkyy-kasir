@@ -5,6 +5,7 @@ import { onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import EmptyState from '@/components/pos/EmptyState.vue';
 import Modal from '@/components/pos/Modal.vue';
+import PageHeader from '@/components/pos/PageHeader.vue';
 import Pagination from '@/components/pos/Pagination.vue';
 import PosLayout from '@/layouts/PosLayout.vue';
 import { friendlyError } from '@/services/api';
@@ -277,25 +278,16 @@ watch(
 <template>
     <Head title="Manajemen Pengguna" />
     <PosLayout>
-        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
-            <div class="flex items-center gap-3 min-w-0">
-                <div
-                    class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0f2a5c] text-white shadow dark:border dark:border-blue-900/50 dark:bg-blue-950/80 dark:text-blue-400"
-                >
-                    <Users class="h-5 w-5" />
-                </div>
-                <div class="min-w-0">
-                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">Manajemen Pengguna</h1>
-                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate">
-                        Kelola akun pengguna, hak akses peran, dan data instansi sekolah
-                    </p>
-                </div>
-            </div>
-            <div class="flex w-full sm:w-auto items-center gap-2">
+        <PageHeader
+            title="Manajemen Pengguna"
+            :icon="Users"
+            subtitle="Kelola akun pengguna, hak akses peran, dan data instansi sekolah"
+        >
+            <template #actions>
                 <button
                     v-if="tab === 'user'"
                     type="button"
-                    class="inline-flex w-full sm:w-auto justify-center cursor-pointer items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambah"
                 >
                     <Plus class="h-4 w-4" /> Tambah Pengguna
@@ -303,13 +295,13 @@ watch(
                 <button
                     v-else-if="pos.can('sekolah')"
                     type="button"
-                    class="inline-flex w-full sm:w-auto justify-center cursor-pointer items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambahSekolah"
                 >
                     <Plus class="h-4 w-4" /> Tambah Sekolah
                 </button>
-            </div>
-        </div>
+            </template>
+        </PageHeader>
 
         <EmptyState
             v-if="!pos.loading && !pos.can('users')"
@@ -320,20 +312,28 @@ watch(
             <!-- Tabs: User | Sekolah (sekolah hanya untuk developer) -->
             <div
                 v-if="pos.can('sekolah')"
-                class="mb-4 flex w-fit rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
+                class="mb-4 flex flex-wrap items-center gap-2"
             >
                 <button
                     type="button"
-                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition"
-                    :class="tab === 'user' ? 'bg-white shadow-xs text-[#0f2a5c] dark:bg-slate-900 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
+                    class="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition shadow-xs"
+                    :class="
+                        tab === 'user'
+                            ? 'bg-blue-700 text-white dark:bg-blue-600'
+                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                    "
                     @click="tab = 'user'"
                 >
                     <Users class="h-4 w-4" /> Pengguna
                 </button>
                 <button
                     type="button"
-                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition"
-                    :class="tab === 'sekolah' ? 'bg-white shadow-xs text-[#0f2a5c] dark:bg-slate-900 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'"
+                    class="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition shadow-xs"
+                    :class="
+                        tab === 'sekolah'
+                            ? 'bg-blue-700 text-white dark:bg-blue-600'
+                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                    "
                     @click="tab = 'sekolah'"
                 >
                     <School class="h-4 w-4" /> Sekolah

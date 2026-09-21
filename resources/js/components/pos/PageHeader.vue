@@ -9,15 +9,15 @@ defineProps<{ title: string; subtitle?: string; icon?: Component }>();
         <div class="flex items-center gap-3">
             <div
                 v-if="icon"
-                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0f2a5c] text-white shadow-sm transition-transform duration-200 hover:scale-105"
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md transition-transform duration-200 hover:scale-105"
             >
-                <component :is="icon" class="h-5 w-5" />
+                <component :is="icon" class="h-5 w-5 text-cyan-200" />
             </div>
             <div>
-                <h1 class="text-xl font-bold text-slate-900 dark:text-white">
+                <h1 class="text-xl font-black tracking-tight text-white">
                     {{ title }}
                 </h1>
-                <p v-if="subtitle" class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p v-if="subtitle" class="mt-0.5 text-xs sm:text-sm font-medium text-blue-100/90">
                     {{ subtitle }}
                 </p>
             </div>
