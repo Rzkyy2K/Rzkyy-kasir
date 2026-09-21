@@ -134,3 +134,16 @@ export interface ApiResponse<T> {
     data: T;
     errors?: unknown;
 }
+
+export interface HeldTransaction {
+    id: string;
+    timestamp: number;
+    catatan: string;
+    idPelanggan: number | null;
+    namaPelanggan?: string;
+    diskonPersen: number;
+    items: CartItem[];
+    subtotal: number;
+    diskonNominal: number;
+    total: number;
+}

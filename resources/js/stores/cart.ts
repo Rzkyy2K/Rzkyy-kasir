@@ -1,12 +1,32 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import type { Barang, CartItem } from '@/types/pos';
+import type { Barang, CartItem, HeldTransaction } from '@/types/pos';
+
+const STORAGE_KEY = 'edumart_held_transactions';
+
+function loadHeld(): HeldTransaction[] {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveHeld(list: HeldTransaction[]) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch {
+        // storage full / unavailable
+    }
+}
 
 /** Keranjang hanya state sementara; transaksi final wajib via POST /api/penjualan. */
 export const useCartStore = defineStore('cart', () => {
     const items = ref<CartItem[]>([]);
     const idPelanggan = ref<number | null>(null);
     const diskonPersen = ref<number>(0);
+    const heldList = ref<HeldTransaction[]>(loadHeld());
 
     const count = computed(() => items.value.reduce((n, i) => n + i.qty, 0));
 
@@ -89,6 +109,52 @@ export const useCartStore = defineStore('cart', () => {
         diskonPersen.value = 0;
     }
 
+    const heldCount = computed(() => heldList.value.length);
+
+    function holdCurrentCart(catatan?: string, namaPelanggan?: string): HeldTransaction | null {
+        if (items.value.length === 0) return null;
+
+        const defaultLabel = `Antrean #${heldList.value.length + 1}`;
+        const finalNote = catatan?.trim() || (namaPelanggan ? `Pelanggan: ${namaPelanggan}` : defaultLabel);
+
+        const newHeld: HeldTransaction = {
+            id: `hold_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            timestamp: Date.now(),
+            catatan: finalNote,
+            idPelanggan: idPelanggan.value,
+            namaPelanggan: namaPelanggan || undefined,
+            diskonPersen: diskonPersen.value,
+            items: JSON.parse(JSON.stringify(items.value)),
+            subtotal: subtotal.value,
+            diskonNominal: diskonNominal.value,
+            total: total.value,
+        };
+
+        heldList.value.unshift(newHeld);
+        saveHeld(heldList.value);
+        clear();
+        return newHeld;
+    }
+
+    function restoreHeld(id: string): HeldTransaction | null {
+        const idx = heldList.value.findIndex((h) => h.id === id);
+        if (idx === -1) return null;
+
+        const target = heldList.value[idx];
+        items.value = JSON.parse(JSON.stringify(target.items));
+        idPelanggan.value = target.idPelanggan;
+        setDiskonPersen(target.diskonPersen);
+
+        heldList.value.splice(idx, 1);
+        saveHeld(heldList.value);
+        return target;
+    }
+
+    function removeHeld(id: string) {
+        heldList.value = heldList.value.filter((h) => h.id !== id);
+        saveHeld(heldList.value);
+    }
+
     return {
         items,
         idPelanggan,
@@ -98,9 +164,14 @@ export const useCartStore = defineStore('cart', () => {
         count,
         subtotal,
         total,
+        heldList,
+        heldCount,
         setDiskonPersen,
         getItemDiscount,
         getItemSubtotal,
+        holdCurrentCart,
+        restoreHeld,
+        removeHeld,
         add,
         setQty,
         remove,

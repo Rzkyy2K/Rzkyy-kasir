@@ -17,7 +17,7 @@ import {
     Truck,
     Users,
 } from '@lucide/vue';
-import { ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 
 const activeFeatureTab = ref<string>('all');
 
@@ -170,6 +170,61 @@ function filteredFeatures() {
     }
     return features.filter((f) => f.category === activeFeatureTab.value);
 }
+
+const navSections = [
+    { id: 'cerita-kami', label: 'Cerita Kami' },
+    { id: 'filosofi', label: 'Filosofi' },
+    { id: 'about-our-products', label: 'Fitur Produk' },
+];
+
+const activeSection = ref<string>('cerita-kami');
+
+function scrollToSection(id: string, e?: Event) {
+    if (e) e.preventDefault();
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    activeSection.value = id;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (window.history.pushState) {
+        window.history.pushState(null, '', `#${id}`);
+    }
+}
+
+onMounted(() => {
+    // Cek jika ada hash langsung di URL
+    if (window.location.hash) {
+        const hashId = window.location.hash.replace('#', '');
+        if (['cerita-kami', 'filosofi', 'about-our-products'].includes(hashId)) {
+            setTimeout(() => scrollToSection(hashId), 300);
+        }
+    }
+
+    // ScrollSpy observer untuk menandai menu aktif secara halus saat user menggulir
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    activeSection.value = entry.target.id;
+                }
+            });
+        },
+        {
+            rootMargin: '-20% 0px -55% 0px',
+            threshold: 0,
+        },
+    );
+
+    ['cerita-kami', 'filosofi', 'about-our-products'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+    });
+
+    onUnmounted(() => {
+        observer.disconnect();
+    });
+});
 </script>
 
 <template>
@@ -200,38 +255,67 @@ function filteredFeatures() {
                     </Link>
                 </nav>
 
-                <!-- Brand Bar Header dengan Glassmorphism Lembut -->
+                <!-- Brand Bar Header dengan Glassmorphism Lembut & Sticky -->
                 <div
-                    class="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/15 bg-white/10 px-6 py-4 backdrop-blur-md"
+                    class="sticky top-4 z-40 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/20 bg-[#0f2a5c]/85 px-6 py-3.5 shadow-xl shadow-black/25 backdrop-blur-xl transition-all duration-300"
                 >
                     <Link href="/" class="flex items-center gap-3 transition hover:opacity-90">
                         <img
                             src="/logoEduMart.jpeg"
                             alt="Logo EduMart"
-                            class="h-11 w-11 rounded-2xl border border-slate-200 bg-white object-contain p-1 shadow-sm"
+                            class="h-10 w-10 rounded-2xl border border-slate-200 bg-white object-contain p-1 shadow-sm"
                         />
                         <div>
-                            <span class="text-lg font-black tracking-tight text-white">EduMart</span>
-                            <span class="block text-[10px] font-bold tracking-widest text-blue-200/70 uppercase">
+                            <span class="text-base font-black tracking-tight text-white sm:text-lg">EduMart</span>
+                            <span class="block text-[9px] font-bold tracking-widest text-blue-200/70 uppercase sm:text-[10px]">
                                 POS Sekolah Modern
                             </span>
                         </div>
                     </Link>
 
-                    <!-- Quick Navigation Links (Fore Coffee Style) -->
-                    <div class="hidden items-center gap-6 text-sm font-medium text-blue-200 sm:flex">
-                        <a href="#cerita-kami" class="transition hover:text-white">Cerita Kami</a>
-                        <a href="#filosofi" class="transition hover:text-white">Filosofi</a>
-                        <a href="#about-our-products" class="transition hover:text-white">Fitur Produk</a>
+                    <!-- Quick Navigation Links (Fore Coffee Style - Smooth Pills) -->
+                    <div class="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/10 p-1 backdrop-blur-md md:flex">
+                        <button
+                            v-for="nav in navSections"
+                            :key="nav.id"
+                            type="button"
+                            class="cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-300"
+                            :class="
+                                activeSection === nav.id
+                                    ? 'bg-white font-bold text-[#0f2a5c] shadow-md shadow-black/15'
+                                    : 'text-blue-200 hover:bg-white/15 hover:text-white'
+                            "
+                            @click="scrollToSection(nav.id, $event)"
+                        >
+                            {{ nav.label }}
+                        </button>
                     </div>
 
                     <Link
                         href="/login"
-                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-blue-500 active:scale-95"
+                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-blue-500 active:scale-95 sm:px-5 sm:py-2.5"
                     >
                         <span>Masuk Kasir</span>
                         <ArrowRight class="h-3.5 w-3.5" />
                     </Link>
+                </div>
+
+                <!-- Mobile Quick Navigation Strip (Tampil di smartphone / layar sempit) -->
+                <div class="flex items-center justify-center gap-1.5 overflow-x-auto rounded-2xl border border-white/15 bg-white/10 p-1.5 backdrop-blur-md md:hidden">
+                    <button
+                        v-for="nav in navSections"
+                        :key="nav.id"
+                        type="button"
+                        class="cursor-pointer shrink-0 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-300"
+                        :class="
+                            activeSection === nav.id
+                                ? 'bg-white font-bold text-[#0f2a5c] shadow-sm'
+                                : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                        "
+                        @click="scrollToSection(nav.id, $event)"
+                    >
+                        {{ nav.label }}
+                    </button>
                 </div>
             </header>
 
@@ -241,7 +325,7 @@ function filteredFeatures() {
                 <!-- ========================================================= -->
                 <section
                     id="cerita-kami"
-                    class="overflow-hidden rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl sm:p-10"
+                    class="scroll-mt-28 overflow-hidden rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10"
                 >
                     <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
                         <!-- Left Side: Visual Showcase Card -->
@@ -357,7 +441,7 @@ function filteredFeatures() {
                 <!-- ========================================================= -->
                 <section
                     id="filosofi"
-                    class="rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl sm:p-10"
+                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10"
                 >
                     <div class="grid gap-8 lg:grid-cols-12 lg:gap-12">
                         <!-- Left: Title & Concept Tag -->
@@ -396,7 +480,7 @@ function filteredFeatures() {
                 <!-- ========================================================= -->
                 <section
                     id="about-our-products"
-                    class="rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl sm:p-10"
+                    class="scroll-mt-28 rounded-3xl border border-slate-100/90 bg-white p-6 shadow-2xl transition-all duration-500 sm:p-10"
                 >
                     <!-- Section Header -->
                     <div class="text-center">
@@ -535,12 +619,13 @@ function filteredFeatures() {
                                 <span>Buka Halaman Kasir</span>
                                 <ArrowRight class="h-4 w-4" />
                             </Link>
-                            <a
-                                href="#cerita-kami"
-                                class="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/20"
+                            <button
+                                type="button"
+                                class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+                                @click="scrollToSection('cerita-kami')"
                             >
                                 <span>Kembali ke Atas</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -560,3 +645,9 @@ function filteredFeatures() {
         </div>
     </div>
 </template>
+
+<style>
+html {
+    scroll-behavior: smooth;
+}
+</style>

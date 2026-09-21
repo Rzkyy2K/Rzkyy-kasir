@@ -79,6 +79,7 @@ async function simpanAdjust() {
         toast.success(res.message);
         showAdjust.value = false;
         await load();
+        window.dispatchEvent(new CustomEvent('pos:stock-changed'));
     } catch (e) {
         toast.error(
             friendlyError(e, 'Stok gagal diperbarui. Silakan coba lagi.'),

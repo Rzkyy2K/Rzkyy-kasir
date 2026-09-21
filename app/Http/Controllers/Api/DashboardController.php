@@ -26,12 +26,25 @@ class DashboardController extends BaseApiController
 
         $hariIni = $jual->clone()->whereDate('tanggal_penjualan', today());
 
-        $grafik = (clone $jual)
+        $rawGrafik = (clone $jual)
             ->select(DB::raw('DATE(tanggal_penjualan) as tanggal'), DB::raw('SUM(total_faktur) as total'), DB::raw('COUNT(*) as transaksi'))
             ->where('tanggal_penjualan', '>=', now()->subDays(6)->startOfDay())
             ->groupBy(DB::raw('DATE(tanggal_penjualan)'))
-            ->orderBy('tanggal')
-            ->get();
+            ->get()
+            ->keyBy(function ($item) {
+                return date('Y-m-d', strtotime($item->tanggal));
+            });
+
+        $grafik7Hari = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $tgl = now()->subDays($i)->format('Y-m-d');
+            $row = $rawGrafik->get($tgl);
+            $grafik7Hari[] = [
+                'tanggal' => $tgl,
+                'total' => $row ? (float) $row->total : 0,
+                'transaksi' => $row ? (int) $row->transaksi : 0,
+            ];
+        }
 
         return $this->ok([
             'total_produk' => (clone $barang)->where('is_active', 1)->count(),
@@ -42,7 +55,7 @@ class DashboardController extends BaseApiController
             'total_pembelian_bulan_ini' => (float) (clone $beli)->whereMonth('tanggal_faktur', now()->month)->whereYear('tanggal_faktur', now()->year)->sum('total_bayar'),
             'produk_stok_rendah' => (clone $barang)->where('stok', '<=', 10)->orderBy('stok')->limit(5)->get(),
             'transaksi_terbaru' => (clone $jual)->with(['kasir', 'pelanggan'])->orderByDesc('tanggal_penjualan')->limit(8)->get(),
-            'grafik_penjualan_7_hari' => $grafik,
+            'grafik_penjualan_7_hari' => $grafik7Hari,
         ]);
     }
 }

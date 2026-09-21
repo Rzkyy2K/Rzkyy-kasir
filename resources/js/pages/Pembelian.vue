@@ -97,6 +97,7 @@ async function simpan() {
         showForm.value = false;
         baris.value = [];
         await load();
+        window.dispatchEvent(new CustomEvent('pos:stock-changed'));
     } catch (e) {
         toast.error(
             friendlyError(e, 'Pembelian gagal disimpan. Silakan coba lagi.'),

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Minus, Plus, Trash2 } from '@lucide/vue';
+import { Clock, Minus, PauseCircle, Plus, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { rupiah } from '@/lib/format';
 import { useCartStore } from '@/stores/cart';
@@ -10,6 +10,8 @@ const props = withDefaults(
 );
 const emit = defineEmits<{
     (e: 'bayar', payload: { nominal: number; cara: string }): void;
+    (e: 'hold'): void;
+    (e: 'show-held'): void;
 }>();
 
 const cart = useCartStore();
@@ -47,10 +49,49 @@ defineExpose({ setNominal: (v: number) => (nominal.value = v) });
     <div
         class="flex h-full flex-col rounded-2xl border border-slate-200 bg-white shadow-sm"
     >
-        <div class="border-b border-slate-100 px-4 py-3">
-            <h2 class="text-sm font-bold text-slate-900">
-                Keranjang ({{ cart.count }})
-            </h2>
+        <div
+            class="flex items-center justify-between border-b border-slate-100 px-4 py-3"
+        >
+            <div class="flex items-center gap-2">
+                <h2 class="text-sm font-bold text-slate-900">
+                    Keranjang ({{ cart.count }})
+                </h2>
+                <button
+                    v-if="cart.count > 0"
+                    type="button"
+                    class="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                    title="Kosongkan Keranjang"
+                    @click="cart.clear()"
+                >
+                    <Trash2 class="h-3.5 w-3.5" />
+                </button>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                <!-- Tombol Daftar Tertahan -->
+                <button
+                    v-if="cart.heldCount > 0"
+                    type="button"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
+                    title="Buka Daftar Transaksi Tertahan"
+                    @click="emit('show-held')"
+                >
+                    <Clock class="h-3.5 w-3.5 text-amber-600" />
+                    <span>{{ cart.heldCount }} Tertahan</span>
+                </button>
+
+                <!-- Tombol Tahan Transaksi -->
+                <button
+                    v-if="cart.count > 0"
+                    type="button"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+                    title="Tahan transaksi saat ini sementara"
+                    @click="emit('hold')"
+                >
+                    <PauseCircle class="h-3.5 w-3.5 text-blue-600" />
+                    <span>Tahan</span>
+                </button>
+            </div>
         </div>
 
         <div
