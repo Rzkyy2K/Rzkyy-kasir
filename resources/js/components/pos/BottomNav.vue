@@ -137,18 +137,38 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
     </nav>
 
     <Teleport to="body">
-        <Transition
-            enter-active-class="transition-opacity duration-200 ease-out"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition-opacity duration-150 ease-in"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
+        <div
+            class="fixed inset-0 z-50 lg:hidden pointer-events-none"
+            :class="{ 'pointer-events-auto': lainnyaOpen }"
         >
-            <div v-if="lainnyaOpen" class="fixed inset-0 z-50 lg:hidden">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" @click="lainnyaOpen = false" />
+            <!-- Backdrop with smooth blur and fade (stays blurred until closed) -->
+            <Transition
+                enter-active-class="backdrop-enter-active"
+                enter-from-class="backdrop-enter-from"
+                enter-to-class="backdrop-enter-to"
+                leave-active-class="backdrop-leave-active"
+                leave-from-class="backdrop-leave-from"
+                leave-to-class="backdrop-leave-to"
+            >
                 <div
-                    class="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-gradient-to-b from-[#0c2356] to-[#143f91] p-4 text-white shadow-2xl dark:border-white/10 dark:from-[#061226] dark:to-[#0d2757] animate-in-slide-up"
+                    v-if="lainnyaOpen"
+                    class="absolute inset-0 backdrop-active cursor-pointer pointer-events-auto"
+                    @click="lainnyaOpen = false"
+                />
+            </Transition>
+
+            <!-- Bottom Sheet -->
+            <Transition
+                enter-active-class="sheet-slide-enter"
+                enter-from-class="translate-y-full"
+                enter-to-class="translate-y-0"
+                leave-active-class="sheet-slide-leave"
+                leave-from-class="translate-y-0"
+                leave-to-class="translate-y-full"
+            >
+                <div
+                    v-if="lainnyaOpen"
+                    class="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-gradient-to-b from-[#0c2356] to-[#143f91] p-4 text-white shadow-2xl dark:border-white/10 dark:from-[#061226] dark:to-[#0d2757] pointer-events-auto"
                     style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))"
                 >
                     <!-- Drag handle bar -->
@@ -158,7 +178,7 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
                         <p class="text-sm font-bold text-white">Menu Lainnya</p>
                         <button
                             type="button"
-                            class="rounded-lg p-1.5 text-blue-200 hover:bg-white/10 active-press hover:text-white"
+                            class="rounded-lg p-1.5 text-blue-200 hover:bg-white/10 active-press hover:text-white cursor-pointer"
                             @click="lainnyaOpen = false"
                         >
                             <X class="h-5 w-5" />
@@ -185,7 +205,7 @@ const lainnyaActive = computed(() => lainnyaItems.value.some((m) => isActive(m.h
                         </Link>
                     </div>
                 </div>
-            </div>
-        </Transition>
+            </Transition>
+        </div>
     </Teleport>
 </template>

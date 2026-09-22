@@ -19,33 +19,44 @@ defineEmits<{ (e: 'close'): void }>();
 
 <template>
     <Teleport to="body">
-        <Transition
-            enter-active-class="transition-opacity duration-200 ease-out"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition-opacity duration-150 ease-in"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
+        <div
+            class="fixed inset-0 z-50 flex justify-center pointer-events-none"
+            :class="[
+                sheetOnMobile
+                    ? 'items-end sm:items-center sm:p-4'
+                    : 'items-center p-3 sm:p-4',
+                { 'pointer-events-auto': open },
+            ]"
         >
-            <div
-                v-if="open"
-                class="fixed inset-0 z-50 flex justify-center"
-                :class="[
-                    sheetOnMobile
-                        ? 'items-end sm:items-center sm:p-4'
-                        : 'items-center p-3 sm:p-4',
-                ]"
+            <!-- Backdrop with smooth blur and fade (stays blurred until closed) -->
+            <Transition
+                enter-active-class="backdrop-enter-active"
+                enter-from-class="backdrop-enter-from"
+                enter-to-class="backdrop-enter-to"
+                leave-active-class="backdrop-leave-active"
+                leave-from-class="backdrop-leave-from"
+                leave-to-class="backdrop-leave-to"
             >
-                <!-- Backdrop -->
                 <div
-                    class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+                    v-if="open"
+                    class="absolute inset-0 backdrop-active cursor-pointer pointer-events-auto"
                     @click="$emit('close')"
                 />
+            </Transition>
 
-                <!-- Modal Content -->
+            <!-- Modal Content with smooth enter and exit -->
+            <Transition
+                :enter-active-class="sheetOnMobile ? 'sheet-slide-enter sm:modal-scale-enter' : 'modal-scale-enter'"
+                :enter-from-class="sheetOnMobile ? 'translate-y-full sm:opacity-0 sm:scale-95' : 'opacity-0 scale-95'"
+                :enter-to-class="sheetOnMobile ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'opacity-100 scale-100'"
+                :leave-active-class="sheetOnMobile ? 'sheet-slide-leave sm:modal-scale-leave' : 'modal-scale-leave'"
+                :leave-from-class="sheetOnMobile ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'opacity-100 scale-100'"
+                :leave-to-class="sheetOnMobile ? 'translate-y-full sm:opacity-0 sm:scale-95' : 'opacity-0 scale-95'"
+            >
                 <div
+                    v-if="open"
                     :class="[
-                        'relative flex flex-col max-h-[88vh] w-full overflow-hidden bg-white shadow-2xl dark:bg-slate-900 dark:border dark:border-slate-800 dark:text-slate-100 animate-scale-in',
+                        'relative flex flex-col max-h-[88vh] w-full overflow-hidden bg-white shadow-2xl dark:bg-slate-900 dark:border dark:border-slate-800 dark:text-slate-100 pointer-events-auto',
                         sheetOnMobile
                             ? 'rounded-t-2xl sm:rounded-2xl'
                             : 'rounded-2xl',
@@ -67,7 +78,7 @@ defineEmits<{ (e: 'close'): void }>();
                         </h3>
                         <button
                             type="button"
-                            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 active-press dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
+                            class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 active-press dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
                             @click="$emit('close')"
                         >
                             <X class="h-4 w-4 sm:h-5 sm:w-5" />
@@ -79,7 +90,7 @@ defineEmits<{ (e: 'close'): void }>();
                         <slot />
                     </div>
                 </div>
-            </div>
-        </Transition>
+            </Transition>
+        </div>
     </Teleport>
 </template>

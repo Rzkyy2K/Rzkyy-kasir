@@ -539,17 +539,38 @@ onBeforeUnmount(() => {
 <template>
     <Teleport to="body">
         <div
-            v-if="open"
-            class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+            class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pointer-events-none"
+            :class="{ 'pointer-events-auto': open }"
         >
-            <div
-                class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
-                @click="handleClose"
-            />
-
-            <div
-                class="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl transition-all dark:border dark:border-slate-800 dark:bg-slate-900"
+            <!-- Backdrop with smooth blur and fade (stays blurred until closed) -->
+            <Transition
+                enter-active-class="backdrop-enter-active"
+                enter-from-class="backdrop-enter-from"
+                enter-to-class="backdrop-enter-to"
+                leave-active-class="backdrop-leave-active"
+                leave-from-class="backdrop-leave-from"
+                leave-to-class="backdrop-leave-to"
             >
+                <div
+                    v-if="open"
+                    class="absolute inset-0 backdrop-active cursor-pointer pointer-events-auto"
+                    @click="handleClose"
+                />
+            </Transition>
+
+            <!-- Modal Content -->
+            <Transition
+                enter-active-class="modal-scale-enter"
+                enter-from-class="opacity-0 scale-95"
+                enter-to-class="opacity-100 scale-100"
+                leave-active-class="modal-scale-leave"
+                leave-from-class="opacity-100 scale-100"
+                leave-to-class="opacity-0 scale-95"
+            >
+                <div
+                    v-if="open"
+                    class="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl transition-all dark:border dark:border-slate-800 dark:bg-slate-900 pointer-events-auto"
+                >
                 <!-- Header -->
                 <div
                     class="flex items-center justify-between border-b border-slate-100 px-4 py-3.5 dark:border-slate-800"
@@ -765,8 +786,9 @@ onBeforeUnmount(() => {
                     </button>
                 </div>
             </div>
-        </div>
-    </Teleport>
+        </Transition>
+    </div>
+</Teleport>
 </template>
 
 <style scoped>

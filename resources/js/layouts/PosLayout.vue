@@ -453,21 +453,38 @@ onUnmounted(() => {
 
         <!-- Drawer mobile -->
         <Teleport to="body">
-            <Transition
-                enter-active-class="transition-opacity duration-200 ease-out"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition-opacity duration-150 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
+            <div
+                class="fixed inset-0 z-50 lg:hidden pointer-events-none"
+                :class="{ 'pointer-events-auto': sidebarOpen }"
             >
-                <div v-if="sidebarOpen" class="fixed inset-0 z-50 lg:hidden">
+                <!-- Backdrop with smooth blur and fade (stays blurred until closed) -->
+                <Transition
+                    enter-active-class="backdrop-enter-active"
+                    enter-from-class="backdrop-enter-from"
+                    enter-to-class="backdrop-enter-to"
+                    leave-active-class="backdrop-leave-active"
+                    leave-from-class="backdrop-leave-from"
+                    leave-to-class="backdrop-leave-to"
+                >
                     <div
-                        class="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"
+                        v-if="sidebarOpen"
+                        class="absolute inset-0 backdrop-active cursor-pointer pointer-events-auto"
                         @click="sidebarOpen = false"
                     />
+                </Transition>
+
+                <!-- Sidebar sliding in and out smoothly -->
+                <Transition
+                    enter-active-class="sidebar-slide-enter"
+                    enter-from-class="-translate-x-full"
+                    enter-to-class="translate-x-0"
+                    leave-active-class="sidebar-slide-leave"
+                    leave-from-class="translate-x-0"
+                    leave-to-class="-translate-x-full"
+                >
                     <aside
-                        class="absolute inset-y-0 left-0 flex w-72 flex-col overflow-hidden bg-gradient-to-b from-[#0c2356] via-[#143f91] to-[#1e58c8] text-white shadow-2xl border-r border-white/10 transition-colors duration-200 dark:border-r dark:border-white/10 dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] animate-in-slide-left"
+                        v-if="sidebarOpen"
+                        class="absolute inset-y-0 left-0 flex w-72 flex-col overflow-hidden bg-gradient-to-b from-[#0c2356] via-[#143f91] to-[#1e58c8] text-white shadow-2xl border-r border-white/10 transition-colors duration-200 dark:border-r dark:border-white/10 dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] pointer-events-auto"
                     >
                         <!-- Background Decorative Radial Curves & Geometric Accents (Identik dengan Login) -->
                         <div class="pointer-events-none absolute inset-0 opacity-15 overflow-hidden">
@@ -617,14 +634,14 @@ onUnmounted(() => {
                             </div>
                         </div>
                     </aside>
-                </div>
-            </Transition>
+                </Transition>
+            </div>
         </Teleport>
 
         <div class="min-w-0 w-full md:pl-60">
             <!-- Header (Menyatu Alami dengan Layout Latar Konten) -->
             <header
-                class="sticky top-0 z-30 border-b border-white/10 bg-[#0c2356]/40 backdrop-blur-md text-white transition-colors duration-200 dark:border-white/10 dark:bg-[#061226]/50"
+                class="sticky top-0 z-30 border-b border-white/10 bg-[#0c2356]/40 backdrop-blur-md text-white transition-all duration-300 dark:border-white/10 dark:bg-[#061226]/50 will-change-[backdrop-filter]"
             >
 
                 <div class="relative z-10 flex items-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 min-w-0">

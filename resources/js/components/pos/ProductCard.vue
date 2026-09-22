@@ -118,7 +118,7 @@ function handleAdd() {
                 <!-- Stok Aman -->
                 <span
                     v-else
-                    class="inline-flex items-center rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-medium text-white shadow-xs backdrop-blur-xs ring-1 ring-white/50 dark:ring-slate-800"
+                    class="inline-flex items-center rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-medium text-white shadow-xs backdrop-blur-sm ring-1 ring-white/50 dark:ring-slate-800"
                 >
                     Stok {{ item.stok }}
                 </span>

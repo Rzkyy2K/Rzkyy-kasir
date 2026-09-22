@@ -319,6 +319,47 @@
     opacity: 0;
 }
 
+/* Smooth progressive backdrop blur animations */
+@keyframes backdropBlurIn {
+    0% {
+        opacity: 0;
+        -webkit-backdrop-filter: blur(0px);
+        backdrop-filter: blur(0px);
+        background-color: rgba(15, 23, 42, 0);
+    }
+    100% {
+        opacity: 1;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        background-color: rgba(15, 23, 42, 0.55);
+    }
+}
+
+@keyframes backdropBlurOut {
+    0% {
+        opacity: 1;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        background-color: rgba(15, 23, 42, 0.55);
+    }
+    100% {
+        opacity: 0;
+        -webkit-backdrop-filter: blur(0px);
+        backdrop-filter: blur(0px);
+        background-color: rgba(15, 23, 42, 0);
+    }
+}
+
+.animate-backdrop-in {
+    animation: backdropBlurIn 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: backdrop-filter, opacity;
+}
+
+.animate-backdrop-out {
+    animation: backdropBlurOut 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: backdrop-filter, opacity;
+}
+
 /* Accessibility & Low-power: Honor reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
     *,

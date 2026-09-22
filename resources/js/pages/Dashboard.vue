@@ -488,7 +488,7 @@ const svgData = computed(() => {
                                     hoveredIndex !== null &&
                                     grafikList[hoveredIndex]
                                 "
-                                class="absolute -top-1 z-30 pointer-events-none transform -translate-x-1/2 whitespace-nowrap rounded-xl border border-slate-700 bg-slate-900/95 backdrop-blur-xs px-3 py-2 text-white shadow-xl transition-all duration-150"
+                                class="absolute -top-1 z-30 pointer-events-none transform -translate-x-1/2 whitespace-nowrap rounded-xl border border-slate-700 bg-slate-900/95 backdrop-blur-sm px-3 py-2 text-white shadow-xl transition-all duration-150"
                                 :style="{
                                     left: `${Math.max(16, Math.min(84, ((hoveredIndex + 0.5) / grafikList.length) * 100))}%`,
                                 }"

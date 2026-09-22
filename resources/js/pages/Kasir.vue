@@ -533,21 +533,38 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
 
         <!-- Bottom sheet keranjang -->
         <Teleport to="body">
-            <Transition
-                enter-active-class="transition-opacity duration-200 ease-out"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition-opacity duration-150 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
+            <div
+                class="fixed inset-0 z-50 xl:hidden pointer-events-none"
+                :class="{ 'pointer-events-auto': cartOpen }"
             >
-                <div v-if="cartOpen" class="fixed inset-0 z-50 xl:hidden">
+                <!-- Backdrop with smooth blur and fade (stays blurred until closed) -->
+                <Transition
+                    enter-active-class="backdrop-enter-active"
+                    enter-from-class="backdrop-enter-from"
+                    enter-to-class="backdrop-enter-to"
+                    leave-active-class="backdrop-leave-active"
+                    leave-from-class="backdrop-leave-from"
+                    leave-to-class="backdrop-leave-to"
+                >
                     <div
-                        class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+                        v-if="cartOpen"
+                        class="absolute inset-0 backdrop-active cursor-pointer pointer-events-auto"
                         @click="cartOpen = false"
                     />
+                </Transition>
+
+                <!-- Bottom Sheet -->
+                <Transition
+                    enter-active-class="sheet-slide-enter"
+                    enter-from-class="translate-y-full"
+                    enter-to-class="translate-y-0"
+                    leave-active-class="sheet-slide-leave"
+                    leave-from-class="translate-y-0"
+                    leave-to-class="translate-y-full"
+                >
                     <div
-                        class="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-3xl bg-slate-100 p-3 shadow-2xl dark:bg-slate-900 dark:text-slate-100 border-t border-transparent dark:border-slate-800 animate-in-slide-up"
+                        v-if="cartOpen"
+                        class="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-3xl bg-slate-100 p-3 shadow-2xl dark:bg-slate-900 dark:text-slate-100 border-t border-transparent dark:border-slate-800 pointer-events-auto"
                     >
                         <!-- Drag handle bar -->
                         <div class="mx-auto mb-2.5 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
@@ -556,7 +573,7 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                             <p class="text-sm font-bold text-slate-800 dark:text-white">Keranjang Belanja</p>
                             <button
                                 type="button"
-                                class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 active-press dark:text-slate-400 dark:hover:bg-slate-800"
+                                class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 active-press dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                                 @click="cartOpen = false"
                             >
                                 <X class="h-5 w-5" />
@@ -569,8 +586,8 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                             @show-held="heldModalOpen = true"
                         />
                     </div>
-                </div>
-            </Transition>
+                </Transition>
+            </div>
         </Teleport>
 
         <!-- Struk -->
