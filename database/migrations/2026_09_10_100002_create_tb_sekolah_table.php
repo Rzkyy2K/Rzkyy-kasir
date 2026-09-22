@@ -18,7 +18,6 @@ return new class extends Migration
 
         Schema::create('tb_sekolah', function (Blueprint $table) {
             $table->integer('id_sekolah', true);
-            $table->primary('id_sekolah');
             $table->string('kode_sekolah', 20);
             $table->string('nama_sekolah', 150);
             $table->text('alamat_sekolah')->nullable();

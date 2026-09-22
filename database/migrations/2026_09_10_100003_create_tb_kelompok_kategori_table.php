@@ -18,7 +18,6 @@ return new class extends Migration
 
         Schema::create('tb_kelompok_kategori', function (Blueprint $table) {
             $table->integer('id_kelompok', true);
-            $table->primary('id_kelompok');
             $table->integer('id_sekolah');
             $table->string('nama_kelompok', 100);
             $table->timestamp('created_at')->nullable()->useCurrent();

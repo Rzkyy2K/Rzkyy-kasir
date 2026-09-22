@@ -18,7 +18,6 @@ return new class extends Migration
 
         Schema::create('roles', function (Blueprint $table) {
             $table->integer('id_role', true);
-            $table->primary('id_role');
             $table->string('nama_role', 50);
         });
     }

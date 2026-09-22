@@ -18,7 +18,6 @@ return new class extends Migration
 
         Schema::create('tb_detail_penjualan', function (Blueprint $table) {
             $table->integer('id_detail_penjualan', true);
-            $table->primary('id_detail_penjualan');
             $table->integer('id_penjualan')->nullable();
             $table->integer('id_barang')->nullable();
             $table->integer('jumlah_barang')->nullable();

@@ -18,7 +18,6 @@ return new class extends Migration
 
         Schema::create('tb_kategori', function (Blueprint $table) {
             $table->integer('id_kategori', true);
-            $table->primary('id_kategori');
             $table->integer('id_kelompok')->nullable();
             $table->string('nama', 100)->nullable();
             $table->timestamp('created_at')->nullable();
