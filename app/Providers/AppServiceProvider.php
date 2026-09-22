@@ -36,6 +36,15 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->configureDefaults();
+
+        // Otomatis seed data awal kasir bila tb_user kosong (misal di SQLite server)
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('tb_user') && \Illuminate\Support\Facades\DB::table('tb_user')->count() === 0) {
+                (new \Database\Seeders\PosDataSeeder())->run();
+            }
+        } catch (\Throwable $e) {
+            // Lewati bila koneksi DB belum siap
+        }
     }
 
     /**
