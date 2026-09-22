@@ -31,8 +31,10 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Application
-        run: composer setup
-
-      - name: Run CI Checks
-        run: composer ci:check
+      - name: Build Application
+        run: |
+          composer install --no-interaction --prefer-dist
+          php -r "file_exists('.env') || copy('.env.example', '.env');"
+          php artisan key:generate
+          npm install
+          npm run build

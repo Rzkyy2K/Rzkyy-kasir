@@ -6,6 +6,19 @@ use Illuminate\Support\Facades\Route;
 // Halaman statis About — tema sama dengan Login, tanpa auth.
 Route::inertia('about', 'About')->name('about');
 
+// Endpoint sinkronisasi database server secara instan
+Route::get('/setup-db', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    (new \Database\Seeders\PosDataSeeder())->run();
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Database POS berhasil di-setup dan di-seed!',
+        'total_user' => \Illuminate\Support\Facades\DB::table('tb_user')->count(),
+        'total_sekolah' => \Illuminate\Support\Facades\DB::table('tb_sekolah')->count(),
+        'total_barang' => \Illuminate\Support\Facades\DB::table('tb_barang')->count(),
+    ]);
+});
+
 // Halaman awal = login. Sudah login → langsung ke dashboard.
 Route::get('/', function () {
     return auth()->check()
