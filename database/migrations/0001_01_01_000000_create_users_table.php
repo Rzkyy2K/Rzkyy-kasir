@@ -12,16 +12,10 @@ return new class extends Migration
             $table->id();
 
             // Relasi ke tb_sekolah
-            $table->foreignId('id_sekolah')
-                ->constrained('tb_sekolah')
-                ->restrictOnDelete()
-                ->restrictOnUpdate();
+            $table->integer('id_sekolah')->nullable();
 
             // Relasi ke roles
-            $table->foreignId('id_role')
-                ->constrained('roles')
-                ->restrictOnDelete()
-                ->restrictOnUpdate();
+            $table->integer('id_role')->nullable();
 
             $table->string('username', 50);
             $table->string('password', 255);

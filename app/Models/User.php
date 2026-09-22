@@ -31,9 +31,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
-    /** Akun login bawaan Laravel tersimpan di SQLite lokal; data POS tetap di MySQL db_rizky. */
-    protected $connection = 'sqlite';
-
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 

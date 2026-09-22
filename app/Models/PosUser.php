@@ -8,8 +8,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class PosUser extends Authenticatable
 {
-    protected $connection = 'mysql';
-
     protected $table = 'tb_user';
 
     protected $primaryKey = 'id_user';
