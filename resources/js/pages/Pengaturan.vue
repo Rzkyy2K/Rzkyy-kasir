@@ -108,7 +108,7 @@ onMounted(() => {
                             >Super Admin dapat beralih simulasi peran (Super Admin / Admin / Kasir) melalui menu profil di bilah atas.</span
                         >
                         <span v-if="pos.isDev"
-                            >Developer memiliki akses menyeluruh untuk beralih instansi sekolah dan simulasi peran.</span
+                            >Developer memiliki akses tingkat sistem untuk manajemen instansi sekolah, pengguna, dan pengaturan platform.</span
                         >
                     </div>
                 </div>

@@ -34,10 +34,8 @@ export const usePosStore = defineStore('pos', () => {
     const isDev = computed(() => me.value?.role?.nama_role === 'developer');
     const ownRole = computed(() => me.value?.role?.nama_role ?? '');
 
-    /** Peran yang dipakai untuk filter menu. */
-    const effectiveRole = computed(() =>
-        isSuper.value || isDev.value ? ctxRole.value : ownRole.value,
-    );
+    /** Peran yang dipakai untuk filter menu: murni terkunci pada akun login. */
+    const effectiveRole = computed(() => ownRole.value);
 
     /** Sekolah data: developer bisa pindah, selain itu terkunci. */
     const idSekolah = computed(() => {
@@ -59,21 +57,53 @@ export const usePosStore = defineStore('pos', () => {
     const roleName = computed(() => effectiveRole.value);
 
     function can(menu: string): boolean {
-        // Menu Sekolah murni milik developer (tambah sekolah baru).
-        if (menu === 'sekolah') {
-            return ownRole.value === 'developer';
+        // Dashboard selalu dapat diakses semua role
+        if (menu === 'dashboard') return true;
+
+        const role = (ownRole.value || '').toLowerCase();
+
+        // 1. Developer: murni privasi dan pengelolaan multi-sekolah
+        if (role === 'developer') {
+            return ['dashboard', 'users', 'pengaturan', 'sekolah'].includes(menu);
         }
-        const role = effectiveRole.value;
-        if (!role) return true;
-        // Tampilan super admin: semua menu.
-        if (role === 'super admin') return true;
-        // Perkakas super admin tetap milik developer di semua tampilan.
-        if (menu === 'users' || menu === 'pengaturan') {
-            return ownRole.value === 'developer';
+
+        // 2. Super Admin: manajerial & operasional lengkap (tanpa meja kasir POS langsung)
+        if (role === 'super admin') {
+            return [
+                'dashboard',
+                'produk',
+                'stok',
+                'kategori',
+                'pembelian',
+                'penjualan',
+                'supplier',
+                'pelanggan',
+                'laporan',
+                'users',
+                'pengaturan',
+            ].includes(menu);
         }
-        if (role === 'admin') return true;
-        // kasir: murni fitur kasir
-        return ['dashboard', 'kasir', 'penjualan'].includes(menu);
+
+        // 3. Admin: operasional inventaris & transaksi toko (tanpa kasir, laporan, user & pengaturan)
+        if (role === 'admin') {
+            return [
+                'dashboard',
+                'produk',
+                'stok',
+                'kategori',
+                'pembelian',
+                'penjualan',
+                'supplier',
+                'pelanggan',
+            ].includes(menu);
+        }
+
+        // 4. Kasir: meja kasir POS dan riwayat penjualan
+        if (role === 'kasir') {
+            return ['dashboard', 'kasir', 'penjualan'].includes(menu);
+        }
+
+        return false;
     }
 
     // Gabung init bersamaan (layout + halaman) jadi 1 rangkaian request.
@@ -99,14 +129,14 @@ export const usePosStore = defineStore('pos', () => {
                     ctxRole.value = 'super admin';
                     localStorage.setItem(LS_CTX_ROLE, 'super admin');
                 } else if (isDev.value) {
-                    // Developer mulai tampilan penuh di sekolah pertama.
-                    ctxRole.value = 'super admin';
-                    localStorage.setItem(LS_CTX_ROLE, 'super admin');
-                    ctxSekolah.value = sekolahList.value[0]?.id_sekolah ?? 1;
-                    localStorage.setItem(
-                        LS_CTX_SEKOLAH,
-                        String(ctxSekolah.value),
-                    );
+                    // Developer beroperasi murni sebagai peran Developer.
+                    if (!ctxSekolah.value) {
+                        ctxSekolah.value = sekolahList.value[0]?.id_sekolah ?? 1;
+                        localStorage.setItem(
+                            LS_CTX_SEKOLAH,
+                            String(ctxSekolah.value),
+                        );
+                    }
                 }
             }
 

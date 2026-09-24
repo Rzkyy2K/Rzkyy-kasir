@@ -673,12 +673,12 @@ onUnmounted(() => {
                             }})
                         </p>
                     </div>
-                    <!-- Developer: pindah sekolah + pindah tampilan peran -->
+                    <!-- Developer: pindah sekolah (tanpa ganti peran, privasi multi-sekolah) -->
                     <template v-if="pos.isDev">
                         <select
                             :value="pos.idSekolah"
                             title="Pindah sekolah"
-                            class="max-w-24 sm:max-w-52 truncate rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
+                            class="max-w-28 sm:max-w-56 truncate rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
                             @change="
                                 pos.setCtxSekolah(
                                     Number(
@@ -697,37 +697,35 @@ onUnmounted(() => {
                                 {{ s.nama_sekolah }}
                             </option>
                         </select>
-                        <select
-                            :value="pos.effectiveRole"
-                            title="Tampilan peran"
-                            class="max-w-20 sm:max-w-44 truncate rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
-                            @change="
-                                pos.setCtxRole(
-                                    ($event.target as HTMLSelectElement).value,
-                                )
-                            "
+                        <span
+                            class="hidden sm:inline-flex items-center rounded-xl bg-cyan-400/20 border border-cyan-300/30 px-2.5 py-1 text-[11px] font-bold tracking-wide text-cyan-200"
                         >
-                            <option value="super admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Super Admin</option>
-                            <option value="admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Admin</option>
-                            <option value="kasir" class="bg-[#0c2356] text-white dark:bg-slate-900">Kasir</option>
-                        </select>
+                            Developer
+                        </span>
                     </template>
-                    <!-- Super admin: pilih tampilan peran (sekolah terkunci) -->
+                    <!-- Super Admin: badge peran paten (tanpa ganti peran) -->
                     <template v-else-if="pos.isSuper">
-                        <select
-                            :value="pos.effectiveRole"
-                            title="Tampilan peran"
-                            class="max-w-24 sm:max-w-44 truncate rounded-xl border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
-                            @change="
-                                pos.setCtxRole(
-                                    ($event.target as HTMLSelectElement).value,
-                                )
-                            "
+                        <span
+                            class="hidden sm:inline-flex items-center rounded-xl bg-amber-400/20 border border-amber-300/30 px-2.5 py-1 text-[11px] font-bold tracking-wide text-amber-200"
                         >
-                            <option value="super admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Super Admin</option>
-                            <option value="admin" class="bg-[#0c2356] text-white dark:bg-slate-900">Admin</option>
-                            <option value="kasir" class="bg-[#0c2356] text-white dark:bg-slate-900">Kasir</option>
-                        </select>
+                            Super Admin
+                        </span>
+                    </template>
+                    <!-- Admin: badge peran paten -->
+                    <template v-else-if="pos.ownRole.toLowerCase() === 'admin'">
+                        <span
+                            class="hidden sm:inline-flex items-center rounded-xl bg-blue-400/20 border border-blue-300/30 px-2.5 py-1 text-[11px] font-bold tracking-wide text-blue-200"
+                        >
+                            Admin
+                        </span>
+                    </template>
+                    <!-- Kasir: badge peran paten -->
+                    <template v-else-if="pos.ownRole.toLowerCase() === 'kasir'">
+                        <span
+                            class="hidden sm:inline-flex items-center rounded-xl bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-200"
+                        >
+                            Kasir
+                        </span>
                     </template>
 
                     <!-- Tombol Cepat Toggle Mode Gelap / Terang -->

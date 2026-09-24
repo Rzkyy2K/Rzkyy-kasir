@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\PenjualanController;
 use App\Http\Controllers\Api\SupplierController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('dashboard', [DashboardController::class, 'index']);
+Route::middleware('web')->get('dashboard', [DashboardController::class, 'index']);
 
 Route::get('sekolah', [MasterController::class, 'sekolah']);
 Route::post('sekolah', [MasterController::class, 'storeSekolah']);

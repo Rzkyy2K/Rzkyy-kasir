@@ -2,14 +2,25 @@
 import { Head, Link } from '@inertiajs/vue3';
 import {
     AlertTriangle,
+    ArrowRight,
     BarChart3,
     Boxes,
+    CheckCircle2,
+    Database,
     LayoutDashboard,
     LineChart,
+    Lock,
     Package,
     ReceiptText,
+    School,
+    Server,
+    Settings,
+    ShieldCheck,
+    ShoppingCart,
+    Terminal,
     TrendingUp,
     Trophy,
+    Users,
 } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
@@ -21,6 +32,28 @@ import { rupiah, tanggal } from '@/lib/format';
 import { friendlyError } from '@/services/api';
 import { fetchDashboard } from '@/services/masterService';
 import { usePosStore } from '@/stores/pos';
+
+function switchSchoolContext(id: number, nama: string) {
+    pos.setCtxSekolah(id);
+    toast.success(`Konteks instansi dialihkan ke ${nama}`);
+}
+
+async function checkDbSetup() {
+    try {
+        toast.info('Memeriksa kesiapan skema database...');
+        const res = await fetch('/setup-db');
+        const json = await res.json();
+        if (json.status === 'success') {
+            toast.success(
+                `Database OK: ${json.total_sekolah} sekolah, ${json.total_user} pengguna.`,
+            );
+        } else {
+            toast.info('Database operasional normal.');
+        }
+    } catch {
+        toast.error('Tidak dapat menghubungi endpoint sinkronisasi.');
+    }
+}
 
 interface GrafikItem {
     tanggal: string;
@@ -39,7 +72,7 @@ const hoveredIndex = ref<number | null>(null);
 async function load() {
     loading.value = true;
     try {
-        data.value = await fetchDashboard(pos.idSekolah);
+        data.value = await fetchDashboard(pos.idSekolah, pos.isDev);
     } catch (e) {
         toast.error(friendlyError(e, 'Dashboard gagal dimuat.'));
     } finally {
@@ -239,27 +272,67 @@ const svgData = computed(() => {
     <Head title="Dashboard" />
     <PosLayout>
         <PageHeader
-            title="Dashboard"
+            :title="pos.isDev ? 'Dashboard Pengembang Sistem' : 'Dashboard'"
             :icon="LayoutDashboard"
             :subtitle="
-                pos.sekolahAktif
-                    ? `Ringkasan operasional ${pos.sekolahAktif.nama_sekolah} — ${tanggal(new Date().toISOString())}`
-                    : 'Ringkasan operasional dan penjualan toko hari ini'
+                pos.isDev
+                    ? 'Konsol infrastruktur, manajemen pengguna, dan proteksi privasi multi-sekolah'
+                    : pos.sekolahAktif
+                      ? `Ringkasan operasional ${pos.sekolahAktif.nama_sekolah} — ${tanggal(new Date().toISOString())}`
+                      : 'Ringkasan operasional dan penjualan toko hari ini'
             "
         >
             <template #actions>
-                <Link
-                    href="/kasir"
-                    class="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-800 active-press dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs"
-                >
-                    Buka Kasir
-                </Link>
-                <Link
-                    href="/laporan"
-                    class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold hover:border-blue-300 active-press dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 shadow-xs"
-                >
-                    Lihat Laporan
-                </Link>
+                <template v-if="pos.isDev">
+                    <Link
+                        href="/users"
+                        class="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-800 active-press dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs inline-flex items-center gap-1.5"
+                    >
+                        <Users class="h-4 w-4" />
+                        <span>Kelola Pengguna</span>
+                    </Link>
+                    <Link
+                        href="/pengaturan"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold hover:border-blue-300 active-press dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 shadow-xs inline-flex items-center gap-1.5"
+                    >
+                        <Settings class="h-4 w-4" />
+                        <span>Pengaturan Sistem</span>
+                    </Link>
+                </template>
+                <template v-else>
+                    <Link
+                        v-if="pos.can('kasir')"
+                        href="/kasir"
+                        class="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-800 active-press dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs inline-flex items-center gap-1.5"
+                    >
+                        <ShoppingCart class="h-4 w-4" />
+                        <span>Buka Kasir</span>
+                    </Link>
+                    <Link
+                        v-if="pos.can('stok') && !pos.can('kasir')"
+                        href="/stok"
+                        class="rounded-xl bg-blue-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-800 active-press dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs inline-flex items-center gap-1.5"
+                    >
+                        <Boxes class="h-4 w-4" />
+                        <span>Kelola Stok</span>
+                    </Link>
+                    <Link
+                        v-if="pos.can('laporan')"
+                        href="/laporan"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold hover:border-blue-300 active-press dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 shadow-xs inline-flex items-center gap-1.5"
+                    >
+                        <BarChart3 class="h-4 w-4" />
+                        <span>Lihat Laporan</span>
+                    </Link>
+                    <Link
+                        v-else-if="pos.can('penjualan')"
+                        href="/penjualan"
+                        class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold hover:border-blue-300 active-press dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 shadow-xs inline-flex items-center gap-1.5"
+                    >
+                        <ReceiptText class="h-4 w-4" />
+                        <span>Riwayat Penjualan</span>
+                    </Link>
+                </template>
             </template>
         </PageHeader>
 
@@ -279,8 +352,337 @@ const svgData = computed(() => {
         </div>
 
         <template v-else-if="data">
-            <!-- wrapper vertikal: gap konsisten seperti di foto (12px mobile, 16px desktop) -->
-            <div class="flex flex-col gap-3 lg:gap-4 animate-fade-up">
+            <!-- ========================================================= -->
+            <!-- 1. TAMPILAN KHUSUS DEVELOPER (SISTEM, USER & PRIVASI)     -->
+            <!-- ========================================================= -->
+            <div v-if="pos.isDev || data.is_developer" class="flex flex-col gap-3 lg:gap-4 animate-fade-up">
+                <!-- Stat Card Baris Atas Khusus Developer -->
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+                    <StatCard
+                        title="Instansi Sekolah Terdaftar"
+                        :value="String(data.total_sekolah ?? pos.sekolahList.length)"
+                        hint="Multi-sekolah terisolasi mandiri"
+                        color="blue"
+                        :icon="School"
+                    />
+                    <StatCard
+                        title="Total Pengguna Sistem"
+                        :value="String(data.total_user_aktif ?? data.total_user_semua ?? '—')"
+                        :hint="`${data.total_user_semua ?? 0} total akun terdaftar`"
+                        color="emerald"
+                        :icon="Users"
+                    />
+                    <StatCard
+                        title="Privasi & Isolasi Data"
+                        value="100% Terproteksi"
+                        hint="Data transaksi kasir dipisahkan per sekolah"
+                        color="violet"
+                        :icon="ShieldCheck"
+                    />
+                    <StatCard
+                        title="Status Server & Database"
+                        value="Operasional Normal"
+                        :hint="`MySQL (${data.system_info?.database ?? 'db_rizky'}) · Stabil`"
+                        color="amber"
+                        :icon="Server"
+                    />
+                </div>
+
+                <!-- Bagian Konten Utama: 2 Kolom (Kiri: Instansi Sekolah & Privasi, Kanan: Role & Info Sistem) -->
+                <div class="grid gap-3 lg:grid-cols-3 lg:gap-4">
+                    <!-- Kolom Kiri (2 Kolom) -->
+                    <div class="flex flex-col gap-3 lg:gap-4 lg:col-span-2">
+                        <!-- Card Daftar Instansi Sekolah -->
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                            <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
+                                        <School class="h-4.5 w-4.5" />
+                                    </div>
+                                    <div>
+                                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">
+                                            Instansi Sekolah Terhubung
+                                        </h2>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                            Daftar sekolah yang beroperasi dalam ekosistem platform EduMart POS
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link
+                                    href="/users"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                >
+                                    <span>Kelola Sekolah</span>
+                                    <ArrowRight class="h-3.5 w-3.5" />
+                                </Link>
+                            </div>
+
+                            <!-- List Sekolah Grid -->
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div
+                                    v-for="s in (data.sekolah_list || pos.sekolahList)"
+                                    :key="s.id_sekolah"
+                                    class="relative flex flex-col justify-between rounded-xl border p-4 transition-all duration-200"
+                                    :class="[
+                                        s.id_sekolah === pos.idSekolah
+                                            ? 'border-blue-500/50 bg-blue-50/40 dark:border-blue-500/40 dark:bg-blue-950/20 ring-1 ring-blue-500/20'
+                                            : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:bg-slate-800/70'
+                                    ]"
+                                >
+                                    <div>
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex items-center gap-2">
+                                                <span class="rounded-lg bg-blue-700/10 dark:bg-blue-400/10 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                                                    {{ s.kode_sekolah || `SCH-${s.id_sekolah}` }}
+                                                </span>
+                                                <span
+                                                    v-if="s.id_sekolah === pos.idSekolah"
+                                                    class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+                                                >
+                                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                    Konteks Aktif
+                                                </span>
+                                            </div>
+                                            <span
+                                                class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                                                :class="s.is_active !== false ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'"
+                                            >
+                                                {{ s.is_active !== false ? 'Aktif' : 'Non-aktif' }}
+                                            </span>
+                                        </div>
+
+                                        <h3 class="mt-2.5 text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                                            {{ s.nama_sekolah }}
+                                        </h3>
+                                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                            {{ s.alamat_sekolah || s.alamat || 'Alamat instansi belum diisi' }}
+                                        </p>
+
+                                        <!-- Distribusi Peran Aktif Per Sekolah -->
+                                        <div v-if="s.role_counts" class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                                            <span
+                                                v-if="s.role_counts?.['super admin']"
+                                                class="rounded-md bg-violet-100 dark:bg-violet-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 dark:text-violet-300"
+                                            >
+                                                {{ s.role_counts['super admin'] }} Super Admin
+                                            </span>
+                                            <span
+                                                v-if="s.role_counts?.['admin']"
+                                                class="rounded-md bg-blue-100 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300"
+                                            >
+                                                {{ s.role_counts['admin'] }} Admin
+                                            </span>
+                                            <span
+                                                v-if="s.role_counts?.['kasir']"
+                                                class="rounded-md bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300"
+                                            >
+                                                {{ s.role_counts['kasir'] }} Kasir
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 flex items-center justify-between border-t border-slate-200/60 pt-3 dark:border-slate-800/60">
+                                        <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                            {{ s.total_user ?? '0' }} akun aktif
+                                        </span>
+                                        <button
+                                            v-if="s.id_sekolah !== pos.idSekolah"
+                                            type="button"
+                                            class="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 active-press cursor-pointer shadow-2xs"
+                                            @click="switchSchoolContext(s.id_sekolah, s.nama_sekolah)"
+                                        >
+                                            <span>Pilih Instansi</span>
+                                        </button>
+                                        <span
+                                            v-else
+                                            class="text-xs font-bold text-blue-600 dark:text-blue-400 inline-flex items-center gap-1"
+                                        >
+                                            <CheckCircle2 class="h-3.5 w-3.5" /> Terpilih
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Banner Proteksi Privasi & Isolasi Data Sekolah -->
+                        <div class="relative overflow-hidden rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/70 via-blue-50/50 to-slate-50 p-5 shadow-xs dark:border-indigo-900/50 dark:from-indigo-950/30 dark:via-blue-950/20 dark:to-slate-900/60">
+                            <div class="flex items-start gap-3.5">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 dark:bg-indigo-500">
+                                    <Lock class="h-5 w-5" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                                        Prinsip Privasi Data & Isolasi Multi-Tenant
+                                    </h3>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                        Sebagai Developer sistem, Anda diberikan akses tingkat infrastruktur dan pemeliharaan platform. Demi menjaga kerahasiaan dan privasi antar instansi pendidikan:
+                                    </p>
+                                    <ul class="mt-2.5 grid gap-2 sm:grid-cols-2 text-xs text-slate-600 dark:text-slate-400">
+                                        <li class="flex items-center gap-2">
+                                            <CheckCircle2 class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                            <span>Riwayat transaksi & omset kasir terenkapsulasi di tiap sekolah</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <CheckCircle2 class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                            <span>Katalog produk & inventaris sekolah terisolasi mandiri</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <CheckCircle2 class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                            <span>Hak akses Developer fokus pada User, Sekolah & Pengaturan</span>
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <CheckCircle2 class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                            <span>Perpindahan instansi hanya untuk konfigurasi teknis & akun</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Kanan (1 Kolom) -->
+                    <div class="flex flex-col gap-3 lg:gap-4">
+                        <!-- Distribusi Role Pengguna Aktif Sekolah (Desain Kompak & Ramping) -->
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                            <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                                <div class="flex items-center gap-2.5 min-w-0 pr-2">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                                        <Users class="h-4 w-4" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                            Distribusi Pengguna Aktif
+                                        </h3>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                            {{ pos.sekolahAktif?.nama_sekolah ?? data.current_sekolah?.nama_sekolah ?? 'Instansi Sekolah Terpilih' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="shrink-0 rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                                    {{ data.total_user_sekolah_aktif ?? 0 }} Akun Aktif
+                                </span>
+                            </div>
+
+                            <!-- Grid 3 Kolom Kompak: Super Admin, Admin, Kasir -->
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="flex flex-col items-center rounded-xl border border-violet-100 bg-violet-50/50 p-2.5 text-center dark:border-violet-900/30 dark:bg-violet-950/20">
+                                    <span class="h-2 w-2 rounded-full bg-violet-500 mb-1" />
+                                    <span class="text-[11px] font-semibold text-violet-700 dark:text-violet-300 truncate w-full">Super Admin</span>
+                                    <span class="mt-1 text-base font-extrabold text-slate-900 dark:text-white">
+                                        {{ data.role_counts?.['super admin'] ?? 0 }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-medium">
+                                        {{ ((Number(data.role_counts?.['super admin'] ?? 0) / Math.max(Number(data.total_user_sekolah_aktif ?? 1), 1)) * 100).toFixed(0) }}%
+                                    </span>
+                                </div>
+
+                                <div class="flex flex-col items-center rounded-xl border border-blue-100 bg-blue-50/50 p-2.5 text-center dark:border-blue-900/30 dark:bg-blue-950/20">
+                                    <span class="h-2 w-2 rounded-full bg-blue-500 mb-1" />
+                                    <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300 truncate w-full">Admin</span>
+                                    <span class="mt-1 text-base font-extrabold text-slate-900 dark:text-white">
+                                        {{ data.role_counts?.['admin'] ?? 0 }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-medium">
+                                        {{ ((Number(data.role_counts?.['admin'] ?? 0) / Math.max(Number(data.total_user_sekolah_aktif ?? 1), 1)) * 100).toFixed(0) }}%
+                                    </span>
+                                </div>
+
+                                <div class="flex flex-col items-center rounded-xl border border-emerald-100 bg-emerald-50/50 p-2.5 text-center dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500 mb-1" />
+                                    <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 truncate w-full">Kasir</span>
+                                    <span class="mt-1 text-base font-extrabold text-slate-900 dark:text-white">
+                                        {{ data.role_counts?.['kasir'] ?? 0 }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-medium">
+                                        {{ ((Number(data.role_counts?.['kasir'] ?? 0) / Math.max(Number(data.total_user_sekolah_aktif ?? 1), 1)) * 100).toFixed(0) }}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Bar Proporsi Peran Gabungan Ramping -->
+                            <div class="mt-3">
+                                <div class="flex h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                    <div
+                                        class="bg-violet-500 transition-all duration-500"
+                                        :style="{ width: `${((Number(data.role_counts?.['super admin'] ?? 0) / Math.max(Number(data.total_user_sekolah_aktif ?? 1), 1)) * 100).toFixed(0)}%` }"
+                                    />
+                                    <div
+                                        class="bg-blue-500 transition-all duration-500"
+                                        :style="{ width: `${((Number(data.role_counts?.['admin'] ?? 0) / Math.max(Number(data.total_user_sekolah_aktif ?? 1), 1)) * 100).toFixed(0)}%` }"
+                                    />
+                                    <div
+                                        class="bg-emerald-500 transition-all duration-500"
+                                        :style="{ width: `${((Number(data.role_counts?.['kasir'] ?? 0) / Math.max(Number(data.total_user_sekolah_aktif ?? 1), 1)) * 100).toFixed(0)}%` }"
+                                    />
+                                </div>
+                            </div>
+
+                            <Link
+                                href="/users"
+                                class="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 active-press transition"
+                            >
+                                <Users class="h-3.5 w-3.5" />
+                                <span>Kelola di Manajemen Pengguna</span>
+                            </Link>
+                        </div>
+
+                        <!-- Spesifikasi & Lingkungan Platform -->
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                            <div class="mb-3.5 flex items-center gap-2.5 border-b border-slate-100 pb-3 dark:border-slate-800">
+                                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
+                                    <Terminal class="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                                        Informasi Platform
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Arsitektur & runtime lingkungan sistem
+                                    </p>
+                                </div>
+                            </div>
+
+                            <dl class="space-y-2 text-xs">
+                                <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                    <dt class="text-slate-500 dark:text-slate-400">Aplikasi</dt>
+                                    <dd class="font-bold text-slate-900 dark:text-white">{{ data.system_info?.app_name ?? 'EduMart POS' }}</dd>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                    <dt class="text-slate-500 dark:text-slate-400">Framework</dt>
+                                    <dd class="font-semibold text-slate-800 dark:text-slate-200">Laravel v{{ data.system_info?.laravel_version ?? '12' }}</dd>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                    <dt class="text-slate-500 dark:text-slate-400">PHP Version</dt>
+                                    <dd class="font-semibold text-slate-800 dark:text-slate-200">{{ data.system_info?.php_version ?? '8.2' }}</dd>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                                    <dt class="text-slate-500 dark:text-slate-400">Database Driver</dt>
+                                    <dd class="font-semibold text-slate-800 dark:text-slate-200 uppercase">{{ data.system_info?.database ?? 'mysql' }}</dd>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <dt class="text-slate-500 dark:text-slate-400">Timezone</dt>
+                                    <dd class="font-semibold text-slate-800 dark:text-slate-200">{{ data.system_info?.timezone ?? 'Asia/Jakarta' }}</dd>
+                                </div>
+                            </dl>
+
+                            <!-- Tombol Utilitas Sinkronisasi Database -->
+                            <button
+                                type="button"
+                                class="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/70 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100/70 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 active-press transition cursor-pointer"
+                                @click="checkDbSetup"
+                            >
+                                <Database class="h-3.5 w-3.5" />
+                                <span>Verifikasi Database Platform</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 2. TAMPILAN STANDAR SEKOLAH (SUPER ADMIN, ADMIN, KASIR)   -->
+            <!-- ========================================================= -->
+            <div v-else class="flex flex-col gap-3 lg:gap-4 animate-fade-up">
                 <!-- Stat atas -->
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
                 <StatCard

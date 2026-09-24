@@ -81,11 +81,14 @@ export async function deletePosUser(id: number) {
     return data;
 }
 
-export async function fetchDashboard(id_sekolah?: number) {
+export async function fetchDashboard(id_sekolah?: number, is_dev = false) {
     const { data } = await api.get<ApiResponse<Record<string, unknown>>>(
         '/dashboard',
         {
-            params: { id_sekolah },
+            params: {
+                id_sekolah,
+                is_dev: is_dev ? 1 : 0,
+            },
         },
     );
     return data.data;

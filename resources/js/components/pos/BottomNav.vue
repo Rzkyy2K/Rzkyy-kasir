@@ -39,6 +39,7 @@ const menus = [
 const role = computed(() => (pos.effectiveRole || '').toLowerCase());
 
 const bottomKeys = computed<string[]>(() => {
+    if (pos.isDev) return ['dashboard', 'users', 'pengaturan'];
     if (role.value === 'kasir') return ['dashboard', 'kasir', 'penjualan'];
     if (role.value === 'admin') return ['dashboard', 'stok', 'pembelian', 'supplier'];
     return ['dashboard', 'users', 'pengaturan', 'laporan'];
