@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     LayoutGrid,
     ReceiptText,
+    School,
     Settings,
     ShoppingBag,
     ShoppingCart,
@@ -36,6 +37,20 @@ const menus = [
     { key: 'pengaturan', label: 'Pengaturan', href: '/pengaturan', icon: Settings },
 ];
 
+const computedMenus = computed(() =>
+    menus.map((m) => {
+        if (m.key === 'users' && pos.isDev) {
+            return {
+                ...m,
+                label: 'Sekolah',
+                fullLabel: 'Manajemen Sekolah',
+                icon: School,
+            };
+        }
+        return m;
+    }),
+);
+
 const role = computed(() => (pos.effectiveRole || '').toLowerCase());
 
 const bottomKeys = computed<string[]>(() => {
@@ -45,11 +60,11 @@ const bottomKeys = computed<string[]>(() => {
     return ['dashboard', 'users', 'pengaturan', 'laporan'];
 });
 
-const visibleMenus = computed(() => menus.filter((m) => pos.can(m.key)));
+const visibleMenus = computed(() => computedMenus.value.filter((m) => pos.can(m.key)));
 
 const bottomItems = computed(() =>
     bottomKeys.value
-        .map((k) => menus.find((m) => m.key === k))
+        .map((k) => computedMenus.value.find((m) => m.key === k))
         .filter((m): m is (typeof menus)[number] => !!m && pos.can(m.key)),
 );
 

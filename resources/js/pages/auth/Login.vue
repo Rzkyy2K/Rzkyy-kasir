@@ -171,7 +171,7 @@ onUnmounted(() => {
         <!-- NAVIGASI HOME — ABOUT & FITUR UBAH WARNA (TEMA TAMPILAN)          -->
         <!-- ================================================================= -->
         <nav
-            class="pointer-events-auto absolute z-50 flex items-center gap-2 sm:gap-3 rounded-full border border-white/30 bg-[#0c2356]/90 px-3.5 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold tracking-wide text-white shadow-xl shadow-black/30 backdrop-blur-xl transition hover:bg-[#0c2356] top-4 right-4 sm:top-6 sm:right-8 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:top-6"
+            class="pointer-events-auto absolute z-50 flex items-center gap-2 sm:gap-3 rounded-full border border-white/30 bg-[#0c2356]/90 px-3.5 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold tracking-wide text-white shadow-xl shadow-black/30 backdrop-blur-xl transition hover:bg-[#0c2356] dark:bg-[#061226]/90 dark:border-white/20 dark:hover:bg-[#061226] top-4 right-4 sm:top-6 sm:right-8 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:top-6"
             aria-label="Navigasi dan Tema"
         >
             <Link href="/login" class="font-bold text-white transition hover:text-cyan-300">
@@ -203,7 +203,7 @@ onUnmounted(() => {
         <!-- Full Screen di Mobile, menyisakan header saat form login naik     -->
         <!-- ================================================================= -->
         <div
-            class="welcome-scroll-container relative flex w-full flex-col justify-between overflow-y-auto lg:overflow-hidden bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] px-6 py-4 sm:px-10 md:px-14 lg:w-[52%] xl:w-[54%] 2xl:w-[56%] h-svh lg:min-h-svh lg:py-12 pb-24 lg:pb-12 text-white"
+            class="welcome-scroll-container relative flex w-full flex-col justify-between overflow-y-auto lg:overflow-hidden bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] transition-colors duration-300 px-6 py-4 sm:px-10 md:px-14 lg:w-[52%] xl:w-[54%] 2xl:w-[56%] h-svh lg:min-h-svh lg:py-12 pb-24 lg:pb-12 text-white"
         >
             <!-- Background Decorative Radial Curves & Geometric Accents (Mirip Referensi) -->
             <div class="pointer-events-none absolute inset-0 opacity-15">

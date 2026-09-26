@@ -401,7 +401,7 @@ onMounted(() => {
     <Head title="Tentang Scholify — Kasir Koperasi Sekolah Modern" />
 
     <div
-        class="relative min-h-svh w-full overflow-x-hidden bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] font-sans text-slate-900 selection:bg-[#0c2356] selection:text-white pb-20"
+        class="relative min-h-svh w-full overflow-x-hidden bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] transition-colors duration-300 font-sans text-slate-900 selection:bg-[#0c2356] selection:text-white pb-20"
     >
         <!-- ================================================================= -->
         <!-- LATAR BELAKANG GEOMETRIS & GLOW ORBS (IDENTIK DENGAN LOGIN)       -->
@@ -423,7 +423,7 @@ onMounted(() => {
         <!-- NAVIGASI ATAS KAPSUL & FITUR UBAH TEMA (PERSIS HALAMAN LOGIN)     -->
         <!-- ================================================================= -->
         <nav
-            class="pointer-events-auto absolute z-50 flex items-center gap-2 sm:gap-3 rounded-full border border-white/30 bg-[#0c2356]/90 px-3.5 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold tracking-wide text-white shadow-xl shadow-black/30 backdrop-blur-xl transition hover:bg-[#0c2356] top-4 right-4 sm:top-6 sm:right-8 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:top-6"
+            class="pointer-events-auto absolute z-50 flex items-center gap-2 sm:gap-3 rounded-full border border-white/30 bg-[#0c2356]/90 px-3.5 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold tracking-wide text-white shadow-xl shadow-black/30 backdrop-blur-xl transition hover:bg-[#0c2356] dark:bg-[#061226]/90 dark:border-white/20 dark:hover:bg-[#061226] top-4 right-4 sm:top-6 sm:right-8 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:top-6"
             aria-label="Navigasi dan Tema"
         >
             <Link href="/login" class="font-bold text-blue-100 transition hover:text-white">
@@ -493,7 +493,7 @@ onMounted(() => {
                     />
                 </h1>
                 <!-- Quick Navigation Bar (Sticky Glass Strip) -->
-                <div class="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 rounded-2xl border border-white/20 bg-[#0c2356]/80 p-2 shadow-xl shadow-black/25 backdrop-blur-xl">
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 rounded-2xl border border-white/20 bg-[#0c2356]/80 dark:bg-[#061226]/80 transition-colors duration-300 p-2 shadow-xl shadow-black/25 backdrop-blur-xl">
                     <button
                         v-for="nav in navSections"
                         :key="nav.id"
@@ -529,7 +529,7 @@ onMounted(() => {
                 <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
                     <!-- Left Side: Visual Showcase Card dengan Gradient Squircles -->
                     <div class="lg:col-span-6">
-                        <div class="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] p-5 text-white shadow-xl sm:p-7">
+                        <div class="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#0c2356] via-[#143f91] to-[#1e58c8] dark:from-[#061226] dark:via-[#091c3d] dark:to-[#0d2757] transition-colors duration-300 p-5 text-white shadow-xl sm:p-7">
                             <div class="flex items-center justify-between border-b border-white/15 pb-4">
                                 <div class="flex items-center gap-2.5">
                                     <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md">

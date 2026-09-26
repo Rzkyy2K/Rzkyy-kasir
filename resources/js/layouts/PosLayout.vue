@@ -14,6 +14,7 @@ import {
     Moon,
     ReceiptText,
     RefreshCw,
+    School,
     Settings,
     ShoppingBag,
     ShoppingCart,
@@ -140,7 +141,16 @@ const menus = [
     },
 ];
 
-const visibleMenus = computed(() => menus.filter((m) => pos.can(m.key)));
+const visibleMenus = computed(() =>
+    menus
+        .map((m) => {
+            if (m.key === 'users' && pos.isDev) {
+                return { ...m, label: 'Manajemen Sekolah', icon: School };
+            }
+            return m;
+        })
+        .filter((m) => pos.can(m.key)),
+);
 const currentUrl = computed(() => usePage().url);
 
 async function loadLowStockAlert() {

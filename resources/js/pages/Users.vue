@@ -26,8 +26,6 @@ import type { PosUser, Role, Sekolah } from '@/types/pos';
 const pos = usePosStore();
 const roles = ref<Role[]>([]);
 
-// ----- Tab -----
-const tab = ref<'user' | 'sekolah'>('user');
 
 // ----- User state -----
 const loading = ref(true);
@@ -262,43 +260,56 @@ onMounted(() => {
     void (async () => {
         await pos.init();
         roles.value = await fetchRoles();
-        await load();
-        if (pos.can('sekolah')) await loadSekolah();
+        if (pos.isDev) {
+            await loadSekolah();
+        } else {
+            await load();
+        }
     })();
 });
 watch(
     () => pos.idSekolah,
     () => {
-        page.value = 1;
-        void load();
+        if (!pos.isDev) {
+            page.value = 1;
+            void load();
+        }
     },
 );
 </script>
 
 <template>
-    <Head title="Manajemen Pengguna" />
+    <Head :title="pos.isDev ? 'Manajemen Sekolah' : 'Manajemen Pengguna'" />
     <PosLayout>
         <PageHeader
-            title="Manajemen Pengguna"
-            :icon="Users"
-            subtitle="Kelola akun pengguna, hak akses peran, dan data instansi sekolah"
+            v-if="pos.isDev"
+            title="Manajemen Sekolah"
+            :icon="School"
+            subtitle="Kelola data instansi sekolah dan status aktifnya"
         >
             <template #actions>
                 <button
-                    v-if="tab === 'user'"
-                    type="button"
-                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
-                    @click="bukaTambah"
-                >
-                    <Plus class="h-4 w-4" /> Tambah Pengguna
-                </button>
-                <button
-                    v-else-if="pos.can('sekolah')"
                     type="button"
                     class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
                     @click="bukaTambahSekolah"
                 >
                     <Plus class="h-4 w-4" /> Tambah Sekolah
+                </button>
+            </template>
+        </PageHeader>
+        <PageHeader
+            v-else
+            title="Manajemen Pengguna"
+            :icon="Users"
+            subtitle="Kelola akun pengguna kasir dan hak akses peran"
+        >
+            <template #actions>
+                <button
+                    type="button"
+                    class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-xs hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 transition"
+                    @click="bukaTambah"
+                >
+                    <Plus class="h-4 w-4" /> Tambah Pengguna
                 </button>
             </template>
         </PageHeader>
@@ -309,39 +320,8 @@ watch(
             message="Halaman ini memerlukan hak akses tingkat Developer atau Administrator."
         />
         <template v-else>
-            <!-- Tabs: User | Sekolah (sekolah hanya untuk developer) -->
-            <div
-                v-if="pos.can('sekolah')"
-                class="mb-4 flex flex-wrap items-center gap-2"
-            >
-                <button
-                    type="button"
-                    class="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition shadow-xs"
-                    :class="
-                        tab === 'user'
-                            ? 'bg-blue-700 text-white dark:bg-blue-600'
-                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
-                    "
-                    @click="tab = 'user'"
-                >
-                    <Users class="h-4 w-4" /> Pengguna
-                </button>
-                <button
-                    type="button"
-                    class="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition shadow-xs"
-                    :class="
-                        tab === 'sekolah'
-                            ? 'bg-blue-700 text-white dark:bg-blue-600'
-                            : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
-                    "
-                    @click="tab = 'sekolah'"
-                >
-                    <School class="h-4 w-4" /> Sekolah
-                </button>
-            </div>
-
-            <!-- Tab User -->
-            <template v-if="tab === 'user'">
+            <!-- Tampilan Pengguna (Hanya untuk Non-Developer / Super Admin) -->
+            <template v-if="!pos.isDev">
                 <div v-if="loading" class="space-y-2">
                     <div
                         v-for="i in 4"
@@ -435,7 +415,7 @@ watch(
                 />
             </template>
 
-            <!-- Tab Sekolah -->
+            <!-- Tampilan Sekolah (Hanya untuk Developer) -->
             <template v-else>
                 <div v-if="loadingSekolah" class="space-y-2">
                     <div
