@@ -106,6 +106,12 @@ async function simpan() {
 }
 
 async function hapus(s: Supplier) {
+    if (
+        pos.checkDemo(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi.',
+        )
+    )
+        return;
     if (!confirm(`Hapus data supplier "${s.nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
     try {
         const res = await deleteSupplier(s.id_supplier);

@@ -21,7 +21,7 @@ class AllowAccountSwitch extends RedirectIfAuthenticated
      */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {
-        if ($request->is('login') && $request->isMethod('post')) {
+        if (($request->is('login') || $request->is('demo-login')) && $request->isMethod('post')) {
             $guard = Auth::guard($guards[0] ?? null);
 
             if ($guard->check()) {

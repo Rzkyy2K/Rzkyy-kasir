@@ -4,6 +4,7 @@ use App\Http\Middleware\AllowAccountSwitch;
 use App\Http\Middleware\EnsurePosRole;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\PreventDemoMutation;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        $middleware->validateCsrfTokens(except: ['demo-login']);
+
         // User yang sudah login dan membuka halaman tamu (login/register)
         // diarahkan ke dashboard.
         $middleware->redirectUsersTo('/dashboard');
@@ -38,6 +41,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            PreventDemoMutation::class,
+        ]);
+
+        $middleware->api(append: [
+            PreventDemoMutation::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

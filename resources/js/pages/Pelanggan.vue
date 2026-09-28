@@ -115,6 +115,12 @@ async function simpan() {
 }
 
 async function hapus(p: Pelanggan) {
+    if (
+        pos.checkDemo(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi.',
+        )
+    )
+        return;
     if (!confirm(`Hapus data pelanggan "${p.nama_pelanggan}"? Data yang dihapus tidak dapat dipulihkan.`)) return;
     try {
         const res = await deletePelanggan(p.id_pelanggan);

@@ -97,6 +97,12 @@ function batalEditKelompok() {
 }
 
 async function hapusKelompok(k: KelompokKategori) {
+    if (
+        pos.checkDemo(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi.',
+        )
+    )
+        return;
     if (!confirm(`Hapus kelompok kategori "${k.nama_kelompok}"?`)) return;
     try {
         const res = await deleteKelompokKategori(k.id_kelompok);
@@ -195,6 +201,12 @@ async function simpan() {
 }
 
 async function hapus(k: Kategori) {
+    if (
+        pos.checkDemo(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi.',
+        )
+    )
+        return;
     if (!confirm(`Hapus permanen kategori "${k.nama}"? Kategori yang dihapus tidak dapat dipulihkan kembali.`)) return;
     try {
         const res = await deleteKategori(k.id_kategori);

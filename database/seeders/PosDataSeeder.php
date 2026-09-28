@@ -31,6 +31,11 @@ class PosDataSeeder extends Seeder
     'id_role' => 4,
     'nama_role' => 'developer',
   ),
+  4 => 
+  array (
+    'id_role' => 5,
+    'nama_role' => 'demo',
+  ),
 ));
         }
 
@@ -702,6 +707,22 @@ class PosDataSeeder extends Seeder
     'nama_lengkap' => 'SuperAdmin-smpn1',
     'is_active' => 1,
     'created_at' => '2026-09-14 04:30:05',
+    'created_by' => 1,
+    'updated_at' => NULL,
+    'updated_by' => NULL,
+    'deleted_at' => NULL,
+    'deleted_by' => NULL,
+  ),
+  22 => 
+  array (
+    'id_user' => 32,
+    'id_sekolah' => 1,
+    'id_role' => 5,
+    'username' => 'demo',
+    'password' => '$2y$12$I/WDEblPhshjruIAF0tk1uT87lAc7jBVRkhufqqAD1bSlO3coEcHS',
+    'nama_lengkap' => 'Akun Khusus Demo',
+    'is_active' => 1,
+    'created_at' => '2026-09-26 14:39:34',
     'created_by' => 1,
     'updated_at' => NULL,
     'updated_by' => NULL,

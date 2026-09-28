@@ -30,6 +30,7 @@ import {
     Sparkles,
 } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import { Toaster } from '@/components/ui/sonner';
 import BottomNav from '@/components/pos/BottomNav.vue';
 import { useAppearance } from '@/composables/useAppearance';
@@ -63,7 +64,7 @@ const isSuperAdmin = computed(
         ['super admin', 'developer'].includes(pos.effectiveRole.toLowerCase()),
 );
 const isAdminRole = computed(
-    () => pos.effectiveRole.toLowerCase() === 'admin',
+    () => pos.effectiveRole.toLowerCase() === 'admin' || pos.isDemo,
 );
 const hasVoidManagement = computed(
     () => isAdminRole.value || isSuperAdmin.value,
@@ -271,6 +272,47 @@ watch(
     },
 );
 
+function handleGlobalFormSubmit(e: Event) {
+    if (!pos.isDemo) return;
+    const form = e.target as HTMLFormElement | null;
+    const action = form?.getAttribute('action') ?? '';
+    // Izinkan logout atau autentikasi
+    if (action.includes('logout') || action.includes('demo-login')) {
+        return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    toast.error(
+        'Akses Dibatasi: Akun Demo hanya memiliki hak akses untuk melihat tampilan. Silakan masuk menggunakan akun resmi untuk mengelola fitur ini.',
+        {
+            id: 'demo-action-blocked',
+            duration: 4500,
+        },
+    );
+}
+
+function handleGlobalClick(e: MouseEvent) {
+    if (!pos.isDemo) return;
+    const target = (e.target as HTMLElement | null)?.closest('button, a[data-delete]');
+    if (!target) return;
+    const text = target.textContent?.trim().toLowerCase() ?? '';
+    if (
+        text.includes('hapus') ||
+        text.includes('delete') ||
+        target.hasAttribute('data-delete')
+    ) {
+        e.preventDefault();
+        e.stopPropagation();
+        toast.error(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi untuk melakukan tindakan ini.',
+            {
+                id: 'demo-action-blocked',
+                duration: 4500,
+            },
+        );
+    }
+}
+
 onMounted(() => {
     void pos.init().then(() => {
         void loadLowStockAlert();
@@ -279,6 +321,8 @@ onMounted(() => {
     window.addEventListener('click', handleClickOutside);
     window.addEventListener('pos:stock-changed', handleStockChanged);
     window.addEventListener('pos:void-changed', handleVoidChanged);
+    document.addEventListener('submit', handleGlobalFormSubmit, true);
+    document.addEventListener('click', handleGlobalClick, true);
     window.addEventListener('focus', () => {
         if (hasVoidManagement.value) void loadPendingVoidsAlert();
     });
@@ -298,6 +342,8 @@ onUnmounted(() => {
     window.removeEventListener('click', handleClickOutside);
     window.removeEventListener('pos:stock-changed', handleStockChanged);
     window.removeEventListener('pos:void-changed', handleVoidChanged);
+    document.removeEventListener('submit', handleGlobalFormSubmit, true);
+    document.removeEventListener('click', handleGlobalClick, true);
     if (pollInterval) clearInterval(pollInterval);
 });
 </script>
@@ -406,9 +452,11 @@ onUnmounted(() => {
                             </p>
                             <p class="truncate text-[10px] font-medium text-blue-200">
                                 {{
-                                    pos.me?.sekolah?.nama_sekolah ??
-                                    pos.sekolahAktif?.nama_sekolah ??
-                                    pos.ownRole
+                                    pos.isDemo
+                                        ? 'Mode Demo (Hanya Lihat)'
+                                        : (pos.me?.sekolah?.nama_sekolah ??
+                                          pos.sekolahAktif?.nama_sekolah ??
+                                          pos.ownRole)
                                 }}
                             </p>
                         </div>
@@ -590,9 +638,11 @@ onUnmounted(() => {
                                         </p>
                                         <p class="truncate text-[10px] font-medium text-blue-200">
                                             {{
-                                                pos.me?.sekolah?.nama_sekolah ??
-                                                pos.sekolahAktif?.nama_sekolah ??
-                                                pos.ownRole
+                                                pos.isDemo
+                                                    ? 'Mode Demo (Hanya Lihat)'
+                                                    : (pos.me?.sekolah?.nama_sekolah ??
+                                                      pos.sekolahAktif?.nama_sekolah ??
+                                                      pos.ownRole)
                                             }}
                                         </p>
                                     </div>
@@ -735,6 +785,15 @@ onUnmounted(() => {
                             class="hidden sm:inline-flex items-center rounded-xl bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-200"
                         >
                             Kasir
+                        </span>
+                    </template>
+                    <!-- Akun Demo: badge peran paten -->
+                    <template v-else-if="pos.isDemo">
+                        <span
+                            class="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-amber-400/25 border border-amber-300/40 px-2.5 py-1 text-[11px] font-black tracking-wide text-amber-200 shadow-xs"
+                        >
+                            <Sparkles class="h-3.5 w-3.5 text-amber-300" />
+                            Akun Demo
                         </span>
                     </template>
 
@@ -1109,6 +1168,43 @@ onUnmounted(() => {
             </header>
 
             <main class="relative z-10 w-full min-w-0 px-3 sm:px-6 pt-4 pb-24 md:pb-6 animate-fade-in">
+                <!-- Banner Khusus Akun Demo -->
+                <div
+                    v-if="pos.isDemo"
+                    class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-300/5 p-3.5 sm:p-4 text-amber-950 shadow-xs backdrop-blur-md dark:border-amber-500/30 dark:from-amber-500/20 dark:via-amber-500/10 dark:text-amber-100"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/25 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 shadow-inner"
+                        >
+                            <ShieldAlert class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="rounded-md bg-amber-500/25 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300 border border-amber-500/30"
+                                >
+                                    Mode Akun Demo
+                                </span>
+                                <span class="text-xs font-bold text-amber-950 dark:text-amber-100">
+                                    Pratinjau Tampilan Sistem
+                                </span>
+                            </div>
+                            <p class="mt-0.5 text-xs text-amber-900/90 dark:text-amber-200/90 font-medium">
+                                Anda sedang dalam mode pratinjau antarmuka. <strong>Akses Dibatasi:</strong> Akun Demo bersifat <em>view-only</em> (hanya lihat) dan tidak memiliki izin untuk menambah, mengubah, atau menghapus data.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-1.5 shrink-0 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700 active:scale-98 dark:bg-amber-500 dark:hover:bg-amber-600 transition cursor-pointer self-end sm:self-auto"
+                        @click="logout"
+                    >
+                        <LogOut class="h-3.5 w-3.5" />
+                        <span>Keluar Demo</span>
+                    </button>
+                </div>
+
                 <slot />
             </main>
         </div>

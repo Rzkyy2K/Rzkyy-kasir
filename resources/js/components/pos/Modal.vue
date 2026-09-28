@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { X } from '@lucide/vue';
+import { ShieldAlert, X } from '@lucide/vue';
+import { usePosStore } from '@/stores/pos';
 
 withDefaults(
     defineProps<{
@@ -15,6 +16,8 @@ withDefaults(
 );
 
 defineEmits<{ (e: 'close'): void }>();
+
+const pos = usePosStore();
 </script>
 
 <template>
@@ -83,6 +86,17 @@ defineEmits<{ (e: 'close'): void }>();
                         >
                             <X class="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
+                    </div>
+
+                    <!-- Banner Peringatan Demo pada Modal -->
+                    <div
+                        v-if="pos.isDemo"
+                        class="mx-3.5 sm:mx-6 mt-3 -mb-1 flex items-center gap-2.5 rounded-xl border border-amber-300/80 bg-amber-50/90 px-3 py-2 text-xs text-amber-900 shadow-xs dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200"
+                    >
+                        <ShieldAlert class="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span class="text-[11px] leading-tight font-medium">
+                            <strong class="font-bold">Mode Akun Demo:</strong> Formulir ini disediakan untuk pratinjau antarmuka. Anda harus masuk menggunakan akun resmi untuk menyimpan atau mengubah data.
+                        </span>
                     </div>
 
                     <!-- Modal Body (Scrollable) -->

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { fetchPosUsers, fetchSekolah } from '@/services/masterService';
 import { fetchMe } from '@/services/masterService';
 import { useCatalogStore } from '@/stores/catalog';
@@ -32,10 +33,31 @@ export const usePosStore = defineStore('pos', () => {
 
     const isSuper = computed(() => me.value?.role?.nama_role === 'super admin');
     const isDev = computed(() => me.value?.role?.nama_role === 'developer');
+    const isDemo = computed(
+        () =>
+            me.value?.role?.nama_role === 'demo' ||
+            me.value?.username === 'demo' ||
+            ownRole.value === 'demo',
+    );
     const ownRole = computed(() => me.value?.role?.nama_role ?? '');
 
     /** Peran yang dipakai untuk filter menu: murni terkunci pada akun login. */
     const effectiveRole = computed(() => ownRole.value);
+
+    function checkDemo(customMsg?: string): boolean {
+        if (isDemo.value) {
+            toast.error(
+                customMsg ??
+                    'Akses Dibatasi: Akun Demo hanya memiliki hak akses untuk melihat tampilan. Silakan masuk menggunakan akun resmi untuk mengelola fitur ini.',
+                {
+                    id: 'demo-action-blocked',
+                    duration: 4000,
+                },
+            );
+            return true;
+        }
+        return false;
+    }
 
     /** Sekolah data: developer bisa pindah, selain itu terkunci. */
     const idSekolah = computed(() => {
@@ -84,8 +106,8 @@ export const usePosStore = defineStore('pos', () => {
             ].includes(menu);
         }
 
-        // 3. Admin: operasional inventaris & transaksi toko (tanpa kasir, laporan, user & pengaturan)
-        if (role === 'admin') {
+        // 3. Admin & Demo: operasional inventaris & transaksi toko (tanpa kasir, laporan, user & pengaturan)
+        if (role === 'admin' || role === 'demo') {
             return [
                 'dashboard',
                 'produk',
@@ -205,6 +227,8 @@ export const usePosStore = defineStore('pos', () => {
         roleName,
         isSuper,
         isDev,
+        isDemo,
+        checkDemo,
         ownRole,
         effectiveRole,
         idSekolah,

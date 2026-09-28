@@ -60,7 +60,7 @@ const isSuperAdmin = computed(
 );
 // Admin: Verifikator Lapangan (Cross-Check WA & Meneruskan ke Super Admin)
 const isAdminRole = computed(
-    () => pos.effectiveRole.toLowerCase() === 'admin',
+    () => pos.effectiveRole.toLowerCase() === 'admin' || pos.isDemo,
 );
 // Apakah memiliki akses managerial (Admin atau Super Admin)
 const hasManagementRole = computed(

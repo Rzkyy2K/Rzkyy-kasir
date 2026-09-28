@@ -208,6 +208,12 @@ async function simpan() {
 }
 
 async function nonaktifkan(b: Barang) {
+    if (
+        pos.checkDemo(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi.',
+        )
+    )
+        return;
     if (!confirm(`Hapus permanen "${b.nama}"? Barang & barcode akan hilang dan bisa dipakai lagi.`)) return;
     try {
         const res = await deleteBarang(b.id_barang);

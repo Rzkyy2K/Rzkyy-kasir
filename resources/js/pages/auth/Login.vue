@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
 import {
     Boxes,
     CheckCircle2,
@@ -161,6 +161,21 @@ onUnmounted(() => {
     }
     window.removeEventListener('keydown', handleKeydown);
 });
+
+const demoLoading = ref(false);
+
+function loginDemo() {
+    demoLoading.value = true;
+    router.post(
+        '/demo-login',
+        {},
+        {
+            onFinish: () => {
+                demoLoading.value = false;
+            },
+        },
+    );
+}
 </script>
 
 <template>
@@ -608,12 +623,26 @@ onUnmounted(() => {
                                 type="submit"
                                 class="mt-2 h-11 w-full cursor-pointer rounded-xl bg-slate-950 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-slate-800 active:scale-98 dark:bg-blue-600 dark:hover:bg-blue-500"
                                 :tabindex="3"
-                                :disabled="processing"
+                                :disabled="processing || demoLoading"
                                 data-test="login-button"
                             >
                                 <Spinner v-if="processing" class="mr-2" />
                                 <span>Login Now</span>
                             </Button>
+
+                            <!-- Link / Tombol Akun Khusus Demo -->
+                            <div class="mt-3 text-center">
+                                <button
+                                    type="button"
+                                    class="group flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-amber-300/80 bg-amber-50/50 py-2.5 px-4 text-xs font-bold text-amber-800 shadow-xs backdrop-blur-sm transition-all hover:bg-amber-100/70 hover:border-amber-400 active:scale-[0.99] cursor-pointer dark:border-amber-500/40 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/40"
+                                    :disabled="demoLoading || processing"
+                                    @click="loginDemo"
+                                >
+                                    <Spinner v-if="demoLoading" class="mr-1.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                    <Sparkles v-else class="h-3.5 w-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+                                    <span>Akun Khusus Demo (Lihat Tampilan)</span>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Keterangan Hubungi Admin Sekolah -->
