@@ -1171,33 +1171,33 @@ onUnmounted(() => {
                 <!-- Banner Khusus Akun Demo -->
                 <div
                     v-if="pos.isDemo"
-                    class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-300/5 p-3.5 sm:p-4 text-amber-950 shadow-xs backdrop-blur-md dark:border-amber-500/30 dark:from-amber-500/20 dark:via-amber-500/10 dark:text-amber-100"
+                    class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300/50 bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-transparent p-3.5 sm:p-4 text-white shadow-lg backdrop-blur-xl transition-colors duration-200 dark:border-amber-400/30 dark:from-amber-950/40 dark:via-[#091c3d]/90 dark:to-[#0d2757]/80"
                 >
                     <div class="flex items-center gap-3">
                         <div
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/25 text-amber-700 dark:bg-amber-400/20 dark:text-amber-300 shadow-inner"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-300/40 bg-amber-400/25 text-amber-300 shadow-md backdrop-blur-md dark:border-amber-400/30 dark:bg-amber-400/20 dark:text-amber-300"
                         >
                             <ShieldAlert class="h-5 w-5" />
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
                                 <span
-                                    class="rounded-md bg-amber-500/25 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300 border border-amber-500/30"
+                                    class="rounded-md border border-amber-300/50 bg-amber-400/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-200 shadow-xs dark:border-amber-400/40 dark:bg-amber-400/20 dark:text-amber-300"
                                 >
                                     Mode Akun Demo
                                 </span>
-                                <span class="text-xs font-bold text-amber-950 dark:text-amber-100">
+                                <span class="text-xs sm:text-sm font-black tracking-wide text-white">
                                     Pratinjau Tampilan Sistem
                                 </span>
                             </div>
-                            <p class="mt-0.5 text-xs text-amber-900/90 dark:text-amber-200/90 font-medium">
-                                Anda sedang dalam mode pratinjau antarmuka. <strong>Akses Dibatasi:</strong> Akun Demo bersifat <em>view-only</em> (hanya lihat) dan tidak memiliki izin untuk menambah, mengubah, atau menghapus data.
+                            <p class="mt-1 text-xs text-blue-100/95 font-medium leading-relaxed dark:text-amber-200/90">
+                                Anda sedang dalam mode pratinjau antarmuka. <strong class="font-bold text-amber-300">Akses Dibatasi:</strong> Akun Demo bersifat <span class="italic text-amber-200 font-semibold">view-only</span> (hanya lihat) dan tidak memiliki izin untuk menambah, mengubah, atau menghapus data.
                             </p>
                         </div>
                     </div>
                     <button
                         type="button"
-                        class="inline-flex items-center gap-1.5 shrink-0 rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700 active:scale-98 dark:bg-amber-500 dark:hover:bg-amber-600 transition cursor-pointer self-end sm:self-auto"
+                        class="inline-flex items-center gap-1.5 shrink-0 rounded-xl border border-amber-300/30 bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-amber-600 active:scale-98 dark:bg-amber-600 dark:hover:bg-amber-500 transition cursor-pointer self-end sm:self-auto"
                         @click="logout"
                     >
                         <LogOut class="h-3.5 w-3.5" />
