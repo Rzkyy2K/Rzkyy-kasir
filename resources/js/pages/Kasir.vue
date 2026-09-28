@@ -11,8 +11,6 @@ import {
     ScanBarcode,
     ShoppingCart,
     Trash2,
-    Volume2,
-    VolumeX,
     X,
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -28,9 +26,7 @@ import ProductCard from '@/components/pos/ProductCard.vue';
 import ProductListRow from '@/components/pos/ProductListRow.vue';
 import SearchBar from '@/components/pos/SearchBar.vue';
 import PosLayout from '@/layouts/PosLayout.vue';
-import { playBeep, playErrorBeep } from '@/lib/beep';
 import { rupiah, tanggal } from '@/lib/format';
-import { speakPaymentSuccess } from '@/lib/voice';
 import { friendlyError } from '@/services/api';
 import { fetchBarang, fetchBarangByBarcode } from '@/services/barangService';
 import { fetchPelanggan } from '@/services/pelangganService';
@@ -58,23 +54,10 @@ const restoreConfirmId = ref<string | null>(null);
 const scannerOpen = ref(false);
 
 const viewMode = ref<'grid' | 'list'>('grid');
-const voiceEnabled = ref(true);
 
 function getCartQty(idBarang: number): number {
     const item = cart.items.find((i) => i.id_barang === idBarang);
     return item ? item.qty : 0;
-}
-
-function toggleVoice() {
-    voiceEnabled.value = !voiceEnabled.value;
-    try {
-        localStorage.setItem('pos_voice_enabled', String(voiceEnabled.value));
-    } catch {}
-    if (voiceEnabled.value) {
-        toast.success('Suara kasir diaktifkan (menyebut nominal kembalian)');
-    } else {
-        toast.info('Suara kasir dinonaktifkan (mode senyap)');
-    }
 }
 
 watch(viewMode, (val) => {
@@ -149,12 +132,6 @@ async function bayar(payload: { nominal: number; cara: string }) {
         cart.clear();
         cartOpen.value = false;
         toast.success(res.message || 'Transaksi berhasil disimpan.');
-
-        if (voiceEnabled.value && res.data) {
-            const total = Number(res.data.total_faktur ?? 0);
-            const kembalian = Number(res.data.kembalian ?? 0);
-            speakPaymentSuccess(total, kembalian, payload.cara);
-        }
 
         await cari();
         window.dispatchEvent(new CustomEvent('pos:stock-changed'));
@@ -258,26 +235,21 @@ async function handleBarcodeScan(barcode: string) {
         const item = await fetchBarangByBarcode(code, pos.idSekolah);
         if (item) {
             if (item.stok <= 0) {
-                playErrorBeep();
                 toast.error(`Stok "${item.nama}" habis (${item.stok} ${item.satuan ?? 'pcs'}).`);
                 return;
             }
             const existing = cart.items.find((i) => i.id_barang === item.id_barang);
             if (existing && existing.qty >= item.stok) {
-                playErrorBeep();
                 toast.error(`Jumlah "${item.nama}" melebihi stok yang tersedia (${item.stok}).`);
                 return;
             }
 
             cart.add(item);
-            playBeep();
             toast.success(`+1 ${item.nama}`);
         } else {
-            playErrorBeep();
             toast.error(`Barang dengan barcode "${code}" tidak ditemukan. Silakan cari manual.`);
         }
     } catch {
-        playErrorBeep();
         toast.error(`Barang barcode "${code}" belum terdaftar di sekolah ini.`);
     }
 }
@@ -319,10 +291,6 @@ onMounted(() => {
         const savedView = localStorage.getItem('pos_view_mode');
         if (savedView === 'grid' || savedView === 'list') {
             viewMode.value = savedView;
-        }
-        const savedVoice = localStorage.getItem('pos_voice_enabled');
-        if (savedVoice !== null) {
-            voiceEnabled.value = savedVoice !== 'false';
         }
     } catch {}
 
@@ -406,67 +374,38 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                         />
                     </div>
 
-                    <!-- Toolbar Tombol: Suara Kasir & Toggle Tampilan Grid/List -->
-                    <div class="flex shrink-0 items-center gap-2">
-                        <!-- Toggle Suara Kasir Bicara -->
+                    <!-- Toggle Tampilan Grid/List -->
+                    <div
+                        class="inline-flex shrink-0 rounded-xl border border-slate-200 bg-slate-100 p-0.5 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+                    >
                         <button
                             type="button"
-                            class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold shadow-xs transition"
+                            class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
                             :class="[
-                                voiceEnabled
-                                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:bg-blue-900/50'
-                                    : 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500 dark:hover:bg-slate-800',
+                                viewMode === 'grid'
+                                    ? 'bg-white text-blue-700 shadow-xs dark:bg-slate-800 dark:text-blue-400'
+                                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
                             ]"
-                            :title="
-                                voiceEnabled
-                                    ? 'Suara kasir aktif (kembalian diucapkan). Klik untuk senyap'
-                                    : 'Suara kasir senyap. Klik untuk aktifkan'
-                            "
-                            @click="toggleVoice"
+                            title="Tampilan Kartu (Grid)"
+                            @click="viewMode = 'grid'"
                         >
-                            <Volume2
-                                v-if="voiceEnabled"
-                                class="h-4 w-4 text-blue-600 dark:text-blue-400"
-                            />
-                            <VolumeX v-else class="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                            <span class="hidden sm:inline">
-                                {{ voiceEnabled ? 'Suara ON' : 'Mute' }}
-                            </span>
+                            <LayoutGrid class="h-4 w-4" />
+                            <span class="hidden md:inline">Grid</span>
                         </button>
-
-                        <!-- Toggle Grid vs List Mode -->
-                        <div
-                            class="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+                        <button
+                            type="button"
+                            class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
+                            :class="[
+                                viewMode === 'list'
+                                    ? 'bg-white text-blue-700 shadow-xs dark:bg-slate-800 dark:text-blue-400'
+                                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
+                            ]"
+                            title="Tampilan Daftar (List)"
+                            @click="viewMode = 'list'"
                         >
-                            <button
-                                type="button"
-                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
-                                :class="[
-                                    viewMode === 'grid'
-                                        ? 'bg-white text-blue-700 shadow-xs dark:bg-slate-800 dark:text-blue-400'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
-                                ]"
-                                title="Tampilan Kartu (Grid)"
-                                @click="viewMode = 'grid'"
-                            >
-                                <LayoutGrid class="h-4 w-4" />
-                                <span class="hidden md:inline">Grid</span>
-                            </button>
-                            <button
-                                type="button"
-                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition"
-                                :class="[
-                                    viewMode === 'list'
-                                        ? 'bg-white text-blue-700 shadow-xs dark:bg-slate-800 dark:text-blue-400'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
-                                ]"
-                                title="Tampilan Daftar (List)"
-                                @click="viewMode = 'list'"
-                            >
-                                <List class="h-4 w-4" />
-                                <span class="hidden md:inline">List</span>
-                            </button>
-                        </div>
+                            <List class="h-4 w-4" />
+                            <span class="hidden md:inline">List</span>
+                        </button>
                     </div>
                 </div>
 
@@ -656,17 +595,7 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                     <span>Kembalian</span
                     ><span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ rupiah(struk.kembalian) }}</span>
                 </div>
-                <div class="mt-4 flex gap-1.5 print:hidden">
-                    <button
-                        v-if="voiceEnabled"
-                        type="button"
-                        class="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-100 transition dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:bg-blue-900/50"
-                        title="Dengarkan ulang pengucapan nominal / kembalian"
-                        @click="speakPaymentSuccess(Number(struk.total_faktur), Number(struk.kembalian), struk.cara_bayar)"
-                    >
-                        <Volume2 class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span class="hidden sm:inline">Ulang Suara</span>
-                    </button>
+                <div class="mt-4 flex gap-2 print:hidden">
                     <button
                         type="button"
                         class="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-700 py-2.5 text-sm font-bold text-white cursor-pointer hover:bg-blue-800 transition dark:bg-blue-600 dark:hover:bg-blue-500"
