@@ -9,6 +9,7 @@ import {
     CheckCircle,
     ChevronsUpDown,
     LayoutDashboard,
+    Lock,
     LogOut,
     Menu,
     Moon,
@@ -98,8 +99,33 @@ const profileInitials = computed(() =>
         .toUpperCase(),
 );
 
+const showLogoutModal = ref(false);
+const isLoggingOut = ref(false);
+
 function logout() {
-    router.post('/logout');
+    showProfile.value = false;
+    isLoggingOut.value = false;
+    showLogoutModal.value = true;
+}
+
+function cancelLogout() {
+    if (isLoggingOut.value) return;
+    showLogoutModal.value = false;
+}
+
+function confirmLogout() {
+    if (isLoggingOut.value) return;
+    isLoggingOut.value = true;
+
+    // Transisi Clean Lock & Shimmer sebelum diarahkan ke /logout
+    setTimeout(() => {
+        router.post('/logout', {}, {
+            onFinish: () => {
+                isLoggingOut.value = false;
+                showLogoutModal.value = false;
+            },
+        });
+    }, 850);
 }
 
 const showBack = computed(() => usePage().url !== '/dashboard');
@@ -313,12 +339,19 @@ function handleGlobalClick(e: MouseEvent) {
     }
 }
 
+function handleGlobalKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && showLogoutModal.value && !isLoggingOut.value) {
+        cancelLogout();
+    }
+}
+
 onMounted(() => {
     void pos.init().then(() => {
         void loadLowStockAlert();
         void loadPendingVoidsAlert();
     });
     window.addEventListener('click', handleClickOutside);
+    window.addEventListener('keydown', handleGlobalKeydown);
     window.addEventListener('pos:stock-changed', handleStockChanged);
     window.addEventListener('pos:void-changed', handleVoidChanged);
     document.addEventListener('submit', handleGlobalFormSubmit, true);
@@ -340,6 +373,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('keydown', handleGlobalKeydown);
     window.removeEventListener('pos:stock-changed', handleStockChanged);
     window.removeEventListener('pos:void-changed', handleVoidChanged);
     document.removeEventListener('submit', handleGlobalFormSubmit, true);
@@ -733,30 +767,8 @@ onUnmounted(() => {
                             }})
                         </p>
                     </div>
-                    <!-- Developer: pindah sekolah (tanpa ganti peran, privasi multi-sekolah) -->
+                    <!-- Developer: badge peran Developer -->
                     <template v-if="pos.isDev">
-                        <select
-                            :value="pos.idSekolah"
-                            title="Pindah sekolah"
-                            class="max-w-28 sm:max-w-56 truncate rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/20 focus:ring-2 focus:ring-cyan-300 focus:outline-none dark:border-white/15 dark:bg-black/30 dark:text-slate-100 cursor-pointer"
-                            @change="
-                                pos.setCtxSekolah(
-                                    Number(
-                                        ($event.target as HTMLSelectElement)
-                                            .value,
-                                    ),
-                                )
-                            "
-                        >
-                            <option
-                                v-for="s in pos.sekolahList"
-                                :key="s.id_sekolah"
-                                :value="s.id_sekolah"
-                                class="bg-[#0c2356] text-white dark:bg-slate-900"
-                            >
-                                {{ s.nama_sekolah }}
-                            </option>
-                        </select>
                         <span
                             class="hidden sm:inline-flex items-center rounded-xl bg-cyan-400/20 border border-cyan-300/30 px-2.5 py-1 text-[11px] font-bold tracking-wide text-cyan-200"
                         >
@@ -1210,5 +1222,194 @@ onUnmounted(() => {
         </div>
         <BottomNav />
         <Toaster />
+
+        <!-- Modal Konfirmasi Logout untuk Semua Role -->
+        <Teleport to="body">
+            <div
+                v-if="showLogoutModal"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="logout-modal-title"
+            >
+                <!-- Backdrop with smooth blur and fade -->
+                <Transition
+                    appear
+                    enter-active-class="backdrop-enter-active"
+                    enter-from-class="backdrop-enter-from"
+                    enter-to-class="backdrop-enter-to"
+                    leave-active-class="backdrop-leave-active"
+                    leave-from-class="backdrop-leave-from"
+                    leave-to-class="backdrop-leave-to"
+                >
+                    <div
+                        class="fixed inset-0 backdrop-active cursor-pointer"
+                        @click="cancelLogout"
+                    />
+                </Transition>
+
+                <!-- Dialog box -->
+                <Transition
+                    appear
+                    enter-active-class="modal-scale-enter"
+                    enter-from-class="opacity-0 scale-95"
+                    enter-to-class="opacity-100 scale-100"
+                    leave-active-class="modal-scale-leave"
+                    leave-from-class="opacity-100 scale-100"
+                    leave-to-class="opacity-0 scale-95"
+                >
+                    <!-- Modal Dialog with Animated Moving Glowing Red Border Beam -->
+                    <div
+                        class="relative w-full max-w-sm sm:max-w-md overflow-hidden rounded-[26px] p-[2.5px] shadow-2xl animate-in transition-all duration-500"
+                        :class="[
+                            isLoggingOut
+                                ? 'bg-emerald-100/70 dark:bg-emerald-950/40 shadow-emerald-500/20'
+                                : 'bg-rose-100/80 dark:bg-rose-950/40 shadow-rose-500/15'
+                        ]"
+                    >
+                        <!-- Animated moving glowing outline beam (berputar mengelilingi outline modal) -->
+                        <div
+                            class="absolute -inset-[150%] animate-[spin_3.5s_linear_infinite] pointer-events-none transition-all duration-500"
+                            :class="[
+                                isLoggingOut
+                                    ? 'bg-[conic-gradient(from_0deg,transparent_0_240deg,#34d399_280deg,#10b981_320deg,#059669_360deg)]'
+                                    : 'bg-[conic-gradient(from_0deg,transparent_0_220deg,#fecdd3_260deg,#f43f5e_300deg,#e11d48_340deg,#be123c_360deg)]'
+                            ]"
+                        />
+
+                        <!-- Soft ambient glow around the moving border -->
+                        <div
+                            class="absolute -inset-[100%] blur-md opacity-60 animate-[spin_3.5s_linear_infinite] pointer-events-none transition-all duration-500"
+                            :class="[
+                                isLoggingOut
+                                    ? 'bg-[conic-gradient(from_0deg,transparent_0_240deg,#34d399_280deg,#10b981_320deg,#059669_360deg)]'
+                                    : 'bg-[conic-gradient(from_0deg,transparent_0_220deg,#fecdd3_260deg,#f43f5e_300deg,#e11d48_340deg,#be123c_360deg)]'
+                            ]"
+                        />
+
+                        <!-- Inner Content Card -->
+                        <div
+                            class="relative w-full h-full rounded-[23px] bg-white p-6 dark:bg-slate-900 dark:border dark:border-slate-800/80 dark:text-slate-100"
+                        >
+                            <!-- Close button (disembunyikan saat sedang proses logout) -->
+                            <button
+                                v-if="!isLoggingOut"
+                                type="button"
+                                class="absolute top-4 right-4 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+                                @click="cancelLogout"
+                                title="Tutup"
+                            >
+                                <X class="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+
+                            <div class="flex flex-col items-center text-center">
+                                <!-- Icon (Transisi Halus LogOut -> Lock Hijau Terkunci) -->
+                                <div
+                                    class="flex h-16 w-16 items-center justify-center rounded-2xl mb-4 transition-all duration-300 shadow-sm"
+                                    :class="[
+                                        isLoggingOut
+                                            ? 'bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-400 scale-105'
+                                            : 'bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-400'
+                                    ]"
+                                >
+                                    <Lock v-if="isLoggingOut" class="h-8 w-8 animate-in zoom-in-75 duration-300" />
+                                    <LogOut v-else class="h-8 w-8 transition-transform duration-200" />
+                                </div>
+
+                                <h3
+                                    id="logout-modal-title"
+                                    class="text-lg sm:text-xl font-bold transition-colors duration-200"
+                                    :class="isLoggingOut ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'"
+                                >
+                                    {{ isLoggingOut ? 'Sesi Berhasil Diamankan' : 'Yakin Ingin Keluar?' }}
+                                </h3>
+
+                                <p class="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed transition-all duration-200">
+                                    {{
+                                        isLoggingOut
+                                            ? 'Menutup sesi aktif kasir dan mengamankan data transaksi...'
+                                            : 'Apakah Anda yakin ingin keluar dari sistem kasir? Sesi akun Anda akan diakhiri dan perubahan yang belum disimpan dapat hilang.'
+                                    }}
+                                </p>
+
+                                <!-- User info card preview -->
+                                <div
+                                    class="mt-4 w-full rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 text-left dark:border-slate-800 dark:bg-slate-800/60 transition-opacity duration-300"
+                                    :class="{ 'opacity-60': isLoggingOut }"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm"
+                                        >
+                                            {{ profileInitials || 'U' }}
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-sm font-bold text-slate-800 dark:text-slate-200">
+                                                {{ pos.me?.nama_lengkap ?? 'Pengguna' }}
+                                            </p>
+                                            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                <span
+                                                    class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                                                    :class="[
+                                                        pos.isDemo
+                                                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                                            : pos.ownRole === 'developer'
+                                                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                                                              : pos.ownRole === 'super admin'
+                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                                                                : pos.ownRole === 'admin'
+                                                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                                                  : pos.ownRole === 'kasir'
+                                                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                                                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                                    ]"
+                                                >
+                                                    {{ pos.isDemo ? 'Akun Demo' : (pos.ownRole || 'User') }}
+                                                </span>
+                                                <span
+                                                    v-if="pos.sekolahAktif?.nama_sekolah && !pos.isDemo"
+                                                    class="truncate text-xs text-slate-500 dark:text-slate-400"
+                                                >
+                                                    • {{ pos.sekolahAktif.nama_sekolah }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Buttons (Normal State) -->
+                                <div v-if="!isLoggingOut" class="mt-6 flex w-full flex-col-reverse sm:flex-row items-center gap-2.5">
+                                    <button
+                                        type="button"
+                                        class="w-full sm:flex-1 rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-98 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                                        @click="cancelLogout"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-2.5 px-4 text-sm font-semibold text-white shadow-md shadow-rose-600/20 hover:bg-rose-700 active:scale-98 transition cursor-pointer"
+                                        @click="confirmLogout"
+                                    >
+                                        <LogOut class="h-4 w-4" />
+                                        <span>Ya, Keluar</span>
+                                    </button>
+                                </div>
+
+                                <!-- Shimmer Progress Bar (Logging Out State) -->
+                                <div v-else class="mt-6 w-full space-y-2 animate-in fade-in duration-300">
+                                    <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
+                                        <div class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 w-full animate-pulse"></div>
+                                    </div>
+                                    <p class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                        Mengalihkan ke halaman login...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+            </div>
+        </Teleport>
     </div>
 </template>

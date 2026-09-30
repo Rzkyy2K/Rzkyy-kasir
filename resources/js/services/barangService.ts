@@ -82,6 +82,15 @@ export interface BarcodeLookupResult {
     id_supplier?: number;
     stok?: number;
     barang?: Barang;
+    foto?: string;
+}
+
+export async function extractImageFromUrl(url: string) {
+    const { data } = await api.post<ApiResponse<{ image_url: string }>>(
+        '/barang/extract-image',
+        { url },
+    );
+    return data;
 }
 
 export async function lookupBarcode(barcode: string, idSekolah?: number) {

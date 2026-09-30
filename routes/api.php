@@ -32,6 +32,7 @@ Route::post('barang', [BarangController::class, 'store']);
 Route::get('barang/{id}', [BarangController::class, 'show']);
 Route::put('barang/{id}', [BarangController::class, 'update']);
 Route::delete('barang/{id}', [BarangController::class, 'destroy']);
+Route::post('barang/extract-image', [BarangController::class, 'extractImageFromUrl']);
 Route::post('barang/{id}/stok', [BarangController::class, 'adjustStock']);
 
 Route::get('kelompok-kategori', [KategoriController::class, 'kelompok']);

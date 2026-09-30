@@ -6,6 +6,8 @@ export interface Sekolah {
     alamat_sekolah?: string | null;
     website?: string | null;
     is_active?: boolean;
+    users?: PosUser[];
+    users_count?: number;
 }
 
 export interface Role {
@@ -65,6 +67,7 @@ export interface Barang {
     id_sekolah: number;
     barcode?: string | null;
     nama: string;
+    foto?: string | null;
     id_kategori: number;
     id_kelompok_kategori: number;
     id_supplier: number;
@@ -73,6 +76,8 @@ export interface Barang {
     harga_jual: string | number;
     stok: number;
     is_active: boolean;
+    detail_penjualan_count?: number;
+    detail_pembelian_count?: number;
     kategori?: Kategori;
     kelompok_kategori?: KelompokKategori;
     supplier?: Supplier;
@@ -174,6 +179,7 @@ export interface PrediksiStokItem {
     id_barang: number;
     nama: string;
     barcode?: string | null;
+    foto?: string | null;
     satuan: string;
     harga_beli: number;
     harga_jual: number;

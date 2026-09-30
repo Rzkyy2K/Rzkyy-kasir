@@ -5,7 +5,7 @@ import {
     PackageX,
     Plus,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { rupiah } from '@/lib/format';
 import type { Barang } from '@/types/pos';
 
@@ -20,6 +20,15 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'add', item: Barang): void }>();
+
+const imgError = ref(false);
+
+watch(
+    () => props.item.foto,
+    () => {
+        imgError.value = false;
+    },
+);
 
 const isOutOfStock = computed(() => Number(props.item.stok) <= 0);
 const isLowStock = computed(
@@ -64,7 +73,7 @@ function handleAdd() {
 
 <template>
     <div
-        class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-white p-3.5 shadow-sm transition-all duration-200 select-none dark:bg-slate-900"
+        class="group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-white p-2.5 sm:p-3 shadow-xs transition-all duration-200 select-none dark:bg-slate-900"
         :class="[
             isOutOfStock
                 ? 'border-dashed border-rose-200 bg-slate-50/70 opacity-65 cursor-not-allowed dark:border-rose-900/50 dark:bg-slate-800/40'
@@ -74,13 +83,29 @@ function handleAdd() {
         ]"
         @click="handleAdd"
     >
-        <!-- Bagian Atas: Gambar/Inisial Visual & Badge -->
-        <div class="relative">
+        <!-- Bagian Atas: Kotak Foto & Badge -->
+        <div class="relative flex w-full justify-center">
+            <!-- Kotak Foto (Persegi / Kotak 1:1, Ukuran Kompak & Terpusat) -->
             <div
-                class="flex h-24 w-full items-center justify-center rounded-xl bg-gradient-to-br shadow-inner transition-transform duration-200 group-hover:scale-[1.02]"
+                v-if="item.foto && !imgError"
+                class="relative flex aspect-square w-24 sm:w-28 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50/90 p-1.5 shadow-2xs transition-transform duration-200 group-hover:scale-105 dark:border-slate-800 dark:bg-slate-800/60"
+            >
+                <img
+                    :src="item.foto"
+                    :alt="item.nama"
+                    class="h-full w-full object-contain"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    @error="imgError = true"
+                />
+            </div>
+            <!-- Fallback Inisial Visual (Juga Kotak Persegi) -->
+            <div
+                v-else
+                class="flex aspect-square w-24 sm:w-28 items-center justify-center rounded-xl bg-gradient-to-br shadow-inner transition-transform duration-200 group-hover:scale-105"
                 :class="cardGradient"
             >
-                <span class="text-2xl font-black tracking-wider drop-shadow-sm">
+                <span class="text-xl sm:text-2xl font-black tracking-wider drop-shadow-sm">
                     {{ inisial(item.nama) }}
                 </span>
             </div>
@@ -89,18 +114,18 @@ function handleAdd() {
             <div
                 v-if="cartQty > 0"
                 :key="cartQty"
-                class="absolute -top-1.5 -left-1.5 flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md ring-2 ring-white dark:ring-slate-900 animate-pop-badge"
+                class="absolute -top-1 -left-1 flex items-center gap-1 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-white shadow-md ring-2 ring-white dark:ring-slate-900 animate-pop-badge"
             >
                 <Check class="h-3 w-3 stroke-[3]" />
                 <span>{{ cartQty }}</span>
             </div>
 
             <!-- Stock Status Badge (Kanan Atas) -->
-            <div class="absolute -top-1.5 -right-1.5">
+            <div class="absolute -top-1 -right-1">
                 <!-- Stok Habis -->
                 <span
                     v-if="isOutOfStock"
-                    class="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wide text-white uppercase shadow-md ring-2 ring-white dark:ring-slate-900"
+                    class="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-white uppercase shadow-md ring-2 ring-white dark:ring-slate-900"
                 >
                     <PackageX class="h-3 w-3" />
                     Habis
@@ -109,7 +134,7 @@ function handleAdd() {
                 <!-- Stok Menipis (< 5) -->
                 <span
                     v-else-if="isLowStock"
-                    class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md ring-2 ring-white dark:ring-slate-900 animate-pulse"
+                    class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-md ring-2 ring-white dark:ring-slate-900 animate-pulse"
                 >
                     <AlertTriangle class="h-3 w-3" />
                     Sisa {{ item.stok }}
@@ -126,14 +151,14 @@ function handleAdd() {
         </div>
 
         <!-- Bagian Tengah: Detail Produk -->
-        <div class="mt-2.5 flex-1">
-            <div class="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
-                <span class="truncate">{{ item.kategori?.nama ?? 'Kantin / Umum' }}</span>
+        <div class="mt-2 flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500">
+                <span class="truncate font-medium">{{ item.kategori?.nama ?? 'Kantin / Umum' }}</span>
                 <span>·</span>
                 <span class="shrink-0 font-medium text-slate-500 dark:text-slate-400">{{ item.satuan }}</span>
             </div>
             <h4
-                class="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-slate-800 transition group-hover:text-blue-700 dark:text-slate-100 dark:group-hover:text-blue-400"
+                class="mt-0.5 line-clamp-2 text-xs sm:text-sm font-bold leading-tight text-slate-800 transition group-hover:text-blue-700 dark:text-slate-100 dark:group-hover:text-blue-400"
                 :title="item.nama"
             >
                 {{ item.nama }}
@@ -141,10 +166,10 @@ function handleAdd() {
         </div>
 
         <!-- Bagian Bawah: Harga & Tombol Tambah -->
-        <div class="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5 dark:border-slate-800">
+        <div class="mt-2.5 flex items-center justify-between gap-1.5 border-t border-slate-100 pt-2 dark:border-slate-800">
             <div class="min-w-0">
-                <p class="text-xs text-slate-400 dark:text-slate-500">Harga</p>
-                <p class="truncate text-sm font-bold tabular-nums text-blue-800 sm:text-base dark:text-blue-400">
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-none">Harga</p>
+                <p class="truncate text-xs sm:text-sm font-extrabold tabular-nums text-blue-700 dark:text-blue-400 mt-0.5">
                     {{ rupiah(item.harga_jual) }}
                 </p>
             </div>
@@ -152,7 +177,7 @@ function handleAdd() {
             <button
                 type="button"
                 :disabled="isOutOfStock || isMaxInCart"
-                class="inline-flex shrink-0 items-center justify-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition shadow-xs"
+                class="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition shadow-xs"
                 :class="[
                     isOutOfStock
                         ? 'cursor-not-allowed bg-slate-200 text-slate-400 shadow-none dark:bg-slate-800 dark:text-slate-600'
@@ -169,7 +194,7 @@ function handleAdd() {
                     Maksimal
                 </template>
                 <template v-else>
-                    <Plus class="h-3.5 w-3.5 stroke-[2.5]" />
+                    <Plus class="h-3 w-3 stroke-[2.5]" />
                     <span>Tambah</span>
                 </template>
             </button>

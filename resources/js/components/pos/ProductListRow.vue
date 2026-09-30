@@ -77,6 +77,27 @@ function handleAdd() {
         <!-- Kiri: Mini Visual Avatar & Info Barang -->
         <div class="flex min-w-0 items-center gap-3">
             <div
+                v-if="item.foto"
+                class="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-100 shadow-inner transition-transform duration-200 group-hover:scale-105 dark:border-slate-800 dark:bg-slate-800"
+            >
+                <img
+                    :src="item.foto"
+                    :alt="item.nama"
+                    class="h-full w-full object-contain p-0.5"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    @error="(e) => (e.target as HTMLElement).style.display = 'none'"
+                />
+                <!-- In-Cart mini badge -->
+                <span
+                    v-if="cartQty > 0"
+                    class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-xs ring-2 ring-white dark:ring-slate-900"
+                >
+                    {{ cartQty }}
+                </span>
+            </div>
+            <div
+                v-else
                 class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-inner transition-transform duration-200 group-hover:scale-105"
                 :class="rowGradient"
             >

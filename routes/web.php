@@ -87,6 +87,7 @@ Route::middleware('auth')->group(function () {
     Route::inertia('pelanggan', 'Pelanggan')->name('pos.pelanggan');
     Route::inertia('laporan', 'Laporan')->name('pos.laporan');
     Route::inertia('users', 'Users')->name('pos.users');
+    Route::inertia('sekolah', 'Sekolah')->name('pos.sekolah');
     Route::inertia('pengaturan', 'Pengaturan')->name('pos.pengaturan');
 });
 

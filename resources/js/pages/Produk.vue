@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { Camera, Loader2, Pencil, Plus, Power, ScanBarcode, ShoppingBag } from '@lucide/vue';
+import {
+    AlertTriangle,
+    Camera,
+    LayoutGrid,
+    Loader2,
+    Pencil,
+    Plus,
+    Power,
+    ScanBarcode,
+    ShoppingBag,
+    Table,
+    Trash2,
+    X,
+} from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import BarcodeScannerModal from '@/components/pos/BarcodeScannerModal.vue';
@@ -16,6 +29,7 @@ import { friendlyError } from '@/services/api';
 import {
     createBarang,
     deleteBarang,
+    extractImageFromUrl,
     fetchBarang,
     lookupBarcode,
     updateBarang,
@@ -37,6 +51,23 @@ const total = ref(0);
 const search = ref('');
 const idKelompok = ref<number | null>(null);
 
+const viewMode = ref<'card' | 'table'>('card');
+if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('pos_produk_view_mode');
+    if (saved === 'card' || saved === 'table') {
+        viewMode.value = saved;
+    }
+}
+
+function setViewMode(mode: 'card' | 'table') {
+    viewMode.value = mode;
+    try {
+        localStorage.setItem('pos_produk_view_mode', mode);
+    } catch {
+        // no-op
+    }
+}
+
 const showForm = ref(false);
 const editing = ref<Barang | null>(null);
 const saving = ref(false);
@@ -46,6 +77,126 @@ const supplierList = ref<Supplier[]>([]);
 
 const baseSatuanList = ['pcs', 'pak', 'box', 'renceng', 'botol', 'porsi', 'bungkus'];
 const customSatuanMode = ref(false);
+const fotoPreviewError = ref(false);
+
+const groupedKategori = computed(() => {
+    const map = new Map<number, { id_kelompok: number; nama_kelompok: string; items: Kategori[] }>();
+    const groups: { id_kelompok: number; nama_kelompok: string; items: Kategori[] }[] = [];
+
+    // Prioritaskan urutan kelompok dari catalog
+    for (const kel of catalog.kelompok) {
+        const grp = {
+            id_kelompok: kel.id_kelompok,
+            nama_kelompok: kel.nama_kelompok,
+            items: [] as Kategori[],
+        };
+        map.set(kel.id_kelompok, grp);
+        groups.push(grp);
+    }
+
+    const unassigned: Kategori[] = [];
+
+    for (const kat of kategoriList.value) {
+        const idKel = kat.id_kelompok;
+        if (idKel && map.has(idKel)) {
+            map.get(idKel)!.items.push(kat);
+        } else {
+            // Cek jika kategori memiliki kelompok relasi yang belum terdaftar
+            const fallbackId = idKel || 0;
+            if (!map.has(fallbackId)) {
+                const grp = {
+                    id_kelompok: fallbackId,
+                    nama_kelompok: kat.kelompok?.nama_kelompok ?? 'Lainnya / Umum',
+                    items: [] as Kategori[],
+                };
+                map.set(fallbackId, grp);
+                groups.push(grp);
+            }
+            map.get(fallbackId)!.items.push(kat);
+        }
+    }
+
+    // Hanya tampilkan grup yang memiliki daftar kategori
+    return groups.filter((g) => g.items.length > 0);
+});
+
+function onKategoriChange(e: Event) {
+    const idKat = Number((e.target as HTMLSelectElement).value);
+    form.value.id_kategori = idKat;
+    const found = kategoriList.value.find((k) => k.id_kategori === idKat);
+    if (found) {
+        form.value.id_kelompok_kategori = found.id_kelompok;
+    }
+}
+
+function cleanImageUrl(url: string): string {
+    if (!url) return '';
+    let trimmed = url.trim();
+
+    // Ekstrak URL asli bila user copy link dari hasil pencarian Google Images (misal: imgres?imgurl=...)
+    if (trimmed.includes('google.') && (trimmed.includes('imgurl=') || trimmed.includes('url='))) {
+        try {
+            const parsed = new URL(trimmed);
+            const imgUrl = parsed.searchParams.get('imgurl') || parsed.searchParams.get('url');
+            if (imgUrl && (imgUrl.startsWith('http://') || imgUrl.startsWith('https://'))) {
+                return decodeURIComponent(imgUrl);
+            }
+        } catch {
+            const match = trimmed.match(/[?&](?:imgurl|url)=(https?%3A%2F%2F[^&]+|https?:\/\/[^&]+)/i);
+            if (match && match[1]) {
+                return decodeURIComponent(match[1]);
+            }
+        }
+    }
+
+    return trimmed;
+}
+
+const extractingImage = ref(false);
+let fotoDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function resolveImageUrl(rawUrl: string, autoExtract = true) {
+    if (!rawUrl || !rawUrl.trim()) return;
+    const cleaned = cleanImageUrl(rawUrl);
+    form.value.foto = cleaned;
+    fotoPreviewError.value = false;
+
+    // Cek apakah ini URL halaman web (bukan gambar langsung dan bukan base64)
+    const isDirectImage =
+        cleaned.startsWith('data:image/') ||
+        Boolean(cleaned.match(/\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i));
+
+    if (
+        autoExtract &&
+        !isDirectImage &&
+        (cleaned.startsWith('http://') || cleaned.startsWith('https://'))
+    ) {
+        extractingImage.value = true;
+        try {
+            const res = await extractImageFromUrl(cleaned);
+            if (res.data?.image_url) {
+                form.value.foto = res.data.image_url;
+                fotoPreviewError.value = false;
+                toast.success('Foto produk berhasil diekstrak dari halaman web!');
+            }
+        } catch {
+            // Biarkan user melihat gambar atau coba link lain
+        } finally {
+            extractingImage.value = false;
+        }
+    }
+}
+
+function onFotoInput(e: Event) {
+    const val = (e.target as HTMLInputElement).value;
+    form.value.foto = val;
+    fotoPreviewError.value = false;
+
+    if (fotoDebounceTimer) clearTimeout(fotoDebounceTimer);
+    fotoDebounceTimer = setTimeout(() => {
+        void resolveImageUrl(form.value.foto, true);
+    }, 600);
+}
 
 const satuanList = computed(() => {
     const current = form.value.satuan ? String(form.value.satuan).trim() : '';
@@ -103,8 +254,15 @@ function onSearch() {
 function bukaTambah() {
     editing.value = null;
     customSatuanMode.value = false;
+    fotoPreviewError.value = false;
     form.value = {
         id_sekolah: pos.idSekolah,
+        nama: '',
+        barcode: '',
+        foto: '',
+        id_kategori: undefined,
+        id_kelompok_kategori: undefined,
+        id_supplier: undefined,
         satuan: 'pcs',
         stok: 0,
         harga_beli: 0,
@@ -133,6 +291,12 @@ async function lookupBarcodeInfo(barcode: string) {
             // Otomatis isi nama barang ke kolom input form
             form.value.nama = res.data.nama;
 
+            // Jika ada info foto dari database/katalog publik, bantu isikan juga
+            if (res.data.foto && (!form.value.foto || form.value.foto === '')) {
+                form.value.foto = res.data.foto;
+                fotoPreviewError.value = false;
+            }
+
             // Jika ada info harga, satuan, dan kategori dari produk terdaftar, bantu isikan juga
             if (res.data.harga_beli && (!form.value.harga_beli || form.value.harga_beli === 0)) {
                 form.value.harga_beli = res.data.harga_beli;
@@ -145,6 +309,10 @@ async function lookupBarcodeInfo(barcode: string) {
             }
             if (res.data.id_kategori && !form.value.id_kategori) {
                 form.value.id_kategori = res.data.id_kategori;
+                const found = kategoriList.value.find((k) => k.id_kategori === res.data.id_kategori);
+                if (found) {
+                    form.value.id_kelompok_kategori = found.id_kelompok;
+                }
             }
             if (res.data.id_kelompok_kategori && !form.value.id_kelompok_kategori) {
                 form.value.id_kelompok_kategori = res.data.id_kelompok_kategori;
@@ -182,7 +350,8 @@ function onBarcodeDetected(code: string) {
 function bukaEdit(b: Barang) {
     editing.value = b;
     customSatuanMode.value = false;
-    form.value = { ...b };
+    fotoPreviewError.value = false;
+    form.value = { ...b, foto: b.foto ?? '' };
     showForm.value = true;
 }
 
@@ -207,20 +376,90 @@ async function simpan() {
     }
 }
 
-async function nonaktifkan(b: Barang) {
+async function toggleStatus(b: Barang) {
+    if (
+        pos.checkDemo(
+            'Akses Dibatasi: Akun Demo tidak memiliki izin untuk mengubah status data.',
+        )
+    )
+        return;
+
+    const newStatus = !b.is_active;
+    try {
+        await updateBarang(b.id_barang, { is_active: newStatus });
+        b.is_active = newStatus;
+        toast.success(
+            newStatus
+                ? `"${b.nama}" berhasil diaktifkan untuk penjualan.`
+                : `"${b.nama}" dinonaktifkan (tidak untuk aktif dijual).`,
+        );
+    } catch (e) {
+        toast.error(friendlyError(e, 'Gagal memperbarui status barang.'));
+    }
+}
+
+const deleteModalOpen = ref(false);
+const barangToDelete = ref<Barang | null>(null);
+const actionLoading = ref(false);
+
+const isTradedAndActive = computed(() => {
+    if (!barangToDelete.value) return false;
+    const count =
+        (barangToDelete.value.detail_penjualan_count ?? 0) +
+        (barangToDelete.value.detail_pembelian_count ?? 0);
+    return count > 0 && barangToDelete.value.is_active;
+});
+
+const isTraded = computed(() => {
+    if (!barangToDelete.value) return false;
+    const count =
+        (barangToDelete.value.detail_penjualan_count ?? 0) +
+        (barangToDelete.value.detail_pembelian_count ?? 0);
+    return count > 0;
+});
+
+function bukaHapusModal(b: Barang) {
     if (
         pos.checkDemo(
             'Akses Dibatasi: Akun Demo tidak memiliki izin untuk menghapus data. Silakan masuk menggunakan akun resmi.',
         )
     )
         return;
-    if (!confirm(`Hapus permanen "${b.nama}"? Barang & barcode akan hilang dan bisa dipakai lagi.`)) return;
+
+    barangToDelete.value = b;
+    deleteModalOpen.value = true;
+}
+
+async function nonaktifkanDariModal() {
+    if (!barangToDelete.value) return;
+    actionLoading.value = true;
     try {
-        const res = await deleteBarang(b.id_barang);
+        await updateBarang(barangToDelete.value.id_barang, { is_active: false });
+        barangToDelete.value.is_active = false;
+        toast.success(
+            `"${barangToDelete.value.nama}" berhasil dinonaktifkan (tidak untuk aktif dijual).`,
+        );
+        await load();
+    } catch (e) {
+        toast.error(friendlyError(e, 'Gagal memperbarui status barang.'));
+    } finally {
+        actionLoading.value = false;
+    }
+}
+
+async function eksekusiHapus() {
+    if (!barangToDelete.value) return;
+    actionLoading.value = true;
+    try {
+        const res = await deleteBarang(barangToDelete.value.id_barang);
         toast.success(res.message ?? 'Barang berhasil dihapus.');
+        deleteModalOpen.value = false;
+        barangToDelete.value = null;
         await load();
     } catch (e) {
         toast.error(friendlyError(e, 'Barang gagal dihapus.'));
+    } finally {
+        actionLoading.value = false;
     }
 }
 
@@ -259,7 +498,7 @@ watch([() => pos.idSekolah, idKelompok], () => {
             </template>
         </PageHeader>
 
-        <div class="flex flex-col gap-3 sm:flex-row">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div class="flex-1">
                 <SearchBar
                     v-model="search"
@@ -267,15 +506,49 @@ watch([() => pos.idSekolah, idKelompok], () => {
                     @update:model-value="onSearch"
                 />
             </div>
-            <button
-                type="button"
-                class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition"
-                title="Pindai barcode untuk mencari produk"
-                @click="bukaScannerSearch"
-            >
-                <ScanBarcode class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span>Pindai Barcode</span>
-            </button>
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 transition"
+                    title="Pindai barcode untuk mencari produk"
+                    @click="bukaScannerSearch"
+                >
+                    <ScanBarcode class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span class="hidden sm:inline">Pindai Barcode</span>
+                </button>
+
+                <!-- Switcher Mode Tampilan: Card & Tabel -->
+                <div class="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/90 p-1 dark:border-slate-800 dark:bg-slate-900">
+                    <button
+                        type="button"
+                        :class="[
+                            'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition',
+                            viewMode === 'card'
+                                ? 'bg-white text-blue-700 shadow-2xs dark:bg-slate-800 dark:text-blue-400'
+                                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                        ]"
+                        title="Tampilan Card"
+                        @click="setViewMode('card')"
+                    >
+                        <LayoutGrid class="h-4 w-4" />
+                        <span>Card</span>
+                    </button>
+                    <button
+                        type="button"
+                        :class="[
+                            'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition',
+                            viewMode === 'table'
+                                ? 'bg-white text-blue-700 shadow-2xs dark:bg-slate-800 dark:text-blue-400'
+                                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                        ]"
+                        title="Tampilan Tabel"
+                        @click="setViewMode('table')"
+                    >
+                        <Table class="h-4 w-4" />
+                        <span>Tabel</span>
+                    </button>
+                </div>
+            </div>
         </div>
         <div class="mt-4">
             <CategoryFilter
@@ -304,8 +577,11 @@ watch([() => pos.idSekolah, idKelompok], () => {
             message="Klik tombol Tambah Produk untuk mendaftarkan barang baru ke dalam katalog."
         />
         <template v-else>
-            <!-- Unified Responsive Card Grid -->
-            <div class="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            <!-- 1. Tampilan Card / Grid -->
+            <div
+                v-if="viewMode === 'card'"
+                class="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            >
                 <div
                     v-for="b in rows"
                     :key="b.id_barang"
@@ -315,25 +591,37 @@ watch([() => pos.idSekolah, idKelompok], () => {
                     <div>
                         <div class="flex items-start gap-3 min-w-0">
                             <div
-                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-sm text-blue-700 dark:bg-blue-950/60 dark:text-blue-400"
+                                class="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 font-bold text-sm text-blue-700 dark:border-slate-800 dark:bg-slate-800 dark:text-blue-400"
                             >
-                                <ShoppingBag class="h-5 w-5" />
+                                <img
+                                    v-if="b.foto"
+                                    :src="b.foto"
+                                    :alt="b.nama"
+                                    class="h-full w-full object-contain p-0.5"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer"
+                                    @error="(e) => (e.target as HTMLElement).style.display = 'none'"
+                                />
+                                <ShoppingBag v-else class="h-5 w-5" />
                             </div>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between gap-2">
                                     <h3 class="font-bold text-sm text-slate-800 truncate dark:text-slate-100">
                                         {{ b.nama }}
                                     </h3>
-                                    <span
+                                    <button
+                                        type="button"
+                                        @click="toggleStatus(b)"
+                                        :title="b.is_active ? 'Klik untuk menonaktifkan barang' : 'Klik untuk mengaktifkan barang'"
                                         :class="
                                             b.is_active
-                                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
-                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:hover:bg-emerald-900/60'
+                                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
                                         "
-                                        class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                        class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold transition cursor-pointer"
                                     >
-                                        {{ b.is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
+                                        {{ b.is_active ? '● Aktif' : '○ Nonaktif' }}
+                                    </button>
                                 </div>
                                 <p class="text-xs text-slate-400 truncate dark:text-slate-500">
                                     {{ b.barcode || 'Tanpa Barcode' }} · {{ b.satuan }}
@@ -388,13 +676,154 @@ watch([() => pos.idSekolah, idKelompok], () => {
                                 type="button"
                                 title="Hapus barang"
                                 class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-red-200/80 bg-red-50/50 px-2.5 py-1 text-xs font-medium text-red-600 shadow-2xs hover:bg-red-100 hover:text-red-700 hover:border-red-300 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50 transition"
-                                @click="nonaktifkan(b)"
+                                @click="bukaHapusModal(b)"
                             >
-                                <Power class="h-3.5 w-3.5" />
+                                <Trash2 class="h-3.5 w-3.5" />
                                 <span>Hapus</span>
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- 2. Tampilan Tabel -->
+            <div
+                v-else
+                class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900"
+            >
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-190 text-left text-xs text-slate-700 dark:text-slate-200">
+                        <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                            <tr>
+                                <th class="px-4 py-3.5">Produk</th>
+                                <th class="px-4 py-3.5">Kategori</th>
+                                <th class="px-4 py-3.5 text-right">Harga Beli</th>
+                                <th class="px-4 py-3.5 text-right">Harga Jual</th>
+                                <th class="px-4 py-3.5 text-right">Margin / Laba</th>
+                                <th class="px-4 py-3.5 text-center">Stok</th>
+                                <th class="px-4 py-3.5 text-center">Status</th>
+                                <th class="px-4 py-3.5 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                            <tr
+                                v-for="b in rows"
+                                :key="b.id_barang"
+                                class="transition hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                            >
+                                <!-- Produk (Thumbnail, Nama, Barcode, Satuan) -->
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 font-bold text-xs text-blue-700 dark:border-slate-800 dark:bg-slate-800 dark:text-blue-400"
+                                        >
+                                            <img
+                                                v-if="b.foto"
+                                                :src="b.foto"
+                                                :alt="b.nama"
+                                                class="h-full w-full object-contain p-0.5"
+                                                loading="lazy"
+                                                referrerpolicy="no-referrer"
+                                                @error="(e) => (e.target as HTMLElement).style.display = 'none'"
+                                            />
+                                            <ShoppingBag v-else class="h-4.5 w-4.5" />
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-slate-900 dark:text-slate-100">
+                                                {{ b.nama }}
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500">
+                                                {{ b.barcode || 'Tanpa Barcode' }} · {{ b.satuan }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <!-- Kategori -->
+                                <td class="px-4 py-3">
+                                    <span
+                                        class="inline-block rounded-lg bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-400"
+                                    >
+                                        {{ b.kategori?.nama ?? 'Umum' }}
+                                    </span>
+                                </td>
+                                <!-- Harga Beli -->
+                                <td class="px-4 py-3 text-right font-medium text-slate-600 dark:text-slate-300">
+                                    {{ rupiah(b.harga_beli) }}
+                                </td>
+                                <!-- Harga Jual -->
+                                <td class="px-4 py-3 text-right font-bold text-blue-700 dark:text-blue-400">
+                                    {{ rupiah(b.harga_jual) }}
+                                </td>
+                                <!-- Margin / Laba -->
+                                <td class="px-4 py-3 text-right">
+                                    <span
+                                        :class="
+                                            Number(b.harga_jual) - Number(b.harga_beli) >= 0
+                                                ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                                                : 'text-rose-600 dark:text-rose-400 font-bold'
+                                        "
+                                        class="text-xs"
+                                    >
+                                        {{ Number(b.harga_jual) - Number(b.harga_beli) >= 0 ? '+' : '' }}{{ rupiah(Number(b.harga_jual) - Number(b.harga_beli)) }}
+                                    </span>
+                                </td>
+                                <!-- Stok -->
+                                <td class="px-4 py-3 text-center">
+                                    <span
+                                        class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+                                        :class="
+                                            b.stok <= 0
+                                                ? 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400'
+                                                : b.stok <= 10
+                                                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400'
+                                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                        "
+                                    >
+                                        {{ b.stok }} {{ b.satuan }}
+                                    </span>
+                                </td>
+                                <!-- Status -->
+                                <td class="px-4 py-3 text-center">
+                                    <button
+                                        type="button"
+                                        @click="toggleStatus(b)"
+                                        :title="b.is_active ? 'Klik untuk menonaktifkan barang' : 'Klik untuk mengaktifkan barang'"
+                                        :class="
+                                            b.is_active
+                                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:hover:bg-emerald-900/60'
+                                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+                                        "
+                                        class="rounded-full px-2.5 py-0.5 text-[10px] font-bold transition cursor-pointer"
+                                    >
+                                        {{ b.is_active ? '● Aktif' : '○ Nonaktif' }}
+                                    </button>
+                                </td>
+                                <!-- Aksi -->
+                                <td class="px-4 py-3 text-right">
+                                    <div class="inline-flex items-center justify-end gap-1.5">
+                                        <button
+                                            type="button"
+                                            title="Edit barang"
+                                            class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-blue-400 transition"
+                                            @click="bukaEdit(b)"
+                                        >
+                                            <Pencil class="h-3.5 w-3.5" />
+                                            <span>Edit</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            title="Hapus barang"
+                                            class="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-red-200/80 bg-red-50/50 px-2.5 py-1 text-xs font-medium text-red-600 shadow-2xs hover:bg-red-100 hover:text-red-700 hover:border-red-300 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50 transition"
+                                            @click="bukaHapusModal(b)"
+                                        >
+                                            <Trash2 class="h-3.5 w-3.5" />
+                                            <span>Hapus</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </template>
@@ -474,44 +903,110 @@ watch([() => pos.idSekolah, idKelompok], () => {
                     </label>
                 </div>
 
-                <!-- Kategori & Kelompok (2 Kolom di Mobile & Desktop) -->
-                <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                <!-- Foto Produk (Link URL) -->
+                <div>
                     <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Kategori*
-                        <select
-                            v-model="form.id_kategori"
-                            required
-                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        >
-                            <option
-                                v-for="k in kategoriList"
-                                :key="k.id_kategori"
-                                :value="k.id_kategori"
-                            >
-                                {{ k.nama }}
-                            </option>
-                        </select>
+                        Foto Produk (Link URL)
+                        <span class="text-[11px] font-normal text-slate-400 dark:text-slate-500"> — Opsional</span>
+                        <div class="mt-1 relative flex items-center">
+                            <input
+                                :value="form.foto"
+                                type="text"
+                                placeholder="Tempel link gambar (.jpg/.png) atau tautan halaman web produk..."
+                                class="w-full rounded-xl border border-slate-200 px-3 py-2 pr-28 text-xs sm:text-sm text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                @input="onFotoInput"
+                                @paste="() => setTimeout(() => resolveImageUrl(form.foto, true), 60)"
+                            />
+                            <div class="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                <button
+                                    v-if="form.foto && !form.foto.match(/\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i) && !form.foto.startsWith('data:image/')"
+                                    type="button"
+                                    :disabled="extractingImage"
+                                    class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300 transition disabled:opacity-50"
+                                    title="Ekstrak foto produk dari halaman web"
+                                    @click="resolveImageUrl(form.foto, true)"
+                                >
+                                    <Loader2 v-if="extractingImage" class="h-3 w-3 animate-spin" />
+                                    <span>{{ extractingImage ? 'Mengekstrak…' : 'Ekstrak Foto' }}</span>
+                                </button>
+                                <button
+                                    v-if="form.foto"
+                                    type="button"
+                                    class="cursor-pointer rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition"
+                                    title="Hapus URL foto"
+                                    @click="form.foto = ''; fotoPreviewError = false;"
+                                >
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
                     </label>
-                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Kelompok Kategori*
-                        <select
-                            v-model="form.id_kelompok_kategori"
-                            required
-                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                        >
-                            <option
-                                v-for="k in catalog.kelompok"
-                                :key="k.id_kelompok"
-                                :value="k.id_kelompok"
+
+                    <!-- Live Preview Foto Produk -->
+                    <div
+                        v-if="form.foto && String(form.foto).trim()"
+                        class="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 dark:border-slate-700/80 dark:bg-slate-800/50"
+                    >
+                        <div class="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                            <img
+                                v-show="!fotoPreviewError"
+                                :src="String(form.foto).trim()"
+                                alt="Preview Foto Produk"
+                                class="h-full w-full object-cover"
+                                referrerpolicy="no-referrer"
+                                @load="fotoPreviewError = false"
+                                @error="fotoPreviewError = true"
+                            />
+                            <div
+                                v-if="fotoPreviewError"
+                                class="flex h-full w-full flex-col items-center justify-center p-1 text-center text-rose-500 bg-rose-50 dark:bg-rose-950/40"
+                                title="Gagal memuat gambar dari URL ini"
                             >
-                                {{ k.nama_kelompok }}
-                            </option>
-                        </select>
-                    </label>
+                                <AlertTriangle class="h-4 w-4 shrink-0" />
+                                <span class="text-[9px] font-bold mt-0.5 leading-tight">Gagal</span>
+                            </div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p
+                                class="text-xs font-bold"
+                                :class="fotoPreviewError ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'"
+                            >
+                                {{ fotoPreviewError ? 'Gambar tidak dapat diakses / link tidak valid' : '✓ Pratinjau Foto Berhasil Terhubung' }}
+                            </p>
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5" :title="form.foto">
+                                {{ form.foto }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Supplier -->
-                <div>
+                <!-- Kategori & Kelompok (Disatukan) dan Pemasok (Supplier) (2 Kolom) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Kategori & Kelompok*
+                        <select
+                            :value="form.id_kategori"
+                            required
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            @change="onKategoriChange"
+                        >
+                            <option :value="undefined" disabled>-- Pilih Kategori & Kelompok --</option>
+                            <optgroup
+                                v-for="grp in groupedKategori"
+                                :key="grp.id_kelompok"
+                                :label="grp.nama_kelompok"
+                            >
+                                <option
+                                    v-for="k in grp.items"
+                                    :key="k.id_kategori"
+                                    :value="k.id_kategori"
+                                >
+                                    {{ k.nama }}
+                                </option>
+                            </optgroup>
+                        </select>
+                    </label>
+
                     <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         Pemasok (Supplier)*
                         <select
@@ -519,6 +1014,7 @@ watch([() => pos.idSekolah, idKelompok], () => {
                             required
                             class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs sm:text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                         >
+                            <option :value="undefined" disabled>-- Pilih Pemasok --</option>
                             <option
                                 v-for="s in supplierList"
                                 :key="s.id_supplier"
@@ -646,5 +1142,148 @@ watch([() => pos.idSekolah, idKelompok], () => {
             @scan="onBarcodeDetected"
             @close="scannerOpen = false"
         />
+
+        <!-- Pop-up Modal Peringatan / Konfirmasi Hapus Barang -->
+        <Teleport to="body">
+            <div
+                v-if="deleteModalOpen && barangToDelete"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+                <!-- Backdrop with smooth blur -->
+                <div
+                    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                    @click="deleteModalOpen = false"
+                />
+
+                <!-- Modal Dialog Card -->
+                <div
+                    class="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200 dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <!-- Close button -->
+                    <button
+                        type="button"
+                        class="absolute top-4 right-4 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+                        @click="deleteModalOpen = false"
+                    >
+                        <X class="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+
+                    <!-- KONDISI 1: Barang sudah pernah diperjualbelikan & saat ini MASIH AKTIF -->
+                    <div v-if="isTradedAndActive" class="flex flex-col items-center text-center">
+                        <div
+                            class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-400 mb-3.5 shadow-xs"
+                        >
+                            <AlertTriangle class="h-8 w-8" />
+                        </div>
+
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                            Pertimbangkan Lagi
+                        </h3>
+
+                        <!-- Kalimat Peringatan Khusus Sesuai Permintaan User -->
+                        <div
+                            class="mt-3.5 w-full rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3.5 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-bold leading-relaxed shadow-2xs"
+                        >
+                            “data barang tersebut masih diperjual belikan, mohon pertimbangkan lagi”
+                        </div>
+
+                        <div class="mt-3.5 w-full rounded-2xl bg-slate-50 border border-slate-100 p-3 text-left dark:bg-slate-800/60 dark:border-slate-800">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500 dark:text-slate-400">Nama Barang:</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
+                                    {{ barangToDelete.nama }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs mt-1.5">
+                                <span class="text-slate-500 dark:text-slate-400">Status Saat Ini:</span>
+                                <span class="font-bold text-emerald-600 dark:text-emerald-400">
+                                    ● Aktif Dijual di Kasir
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed text-center">
+                            Barang ini memiliki histori transaksi. Anda harus <strong>menonaktifkannya terlebih dahulu</strong> agar kasir tidak dapat menjual barang ini lagi sebelum dapat dihapus.
+                        </p>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-5 flex w-full flex-col-reverse sm:flex-row items-center gap-2">
+                            <button
+                                type="button"
+                                class="w-full sm:flex-1 rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 active-press dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
+                                @click="deleteModalOpen = false"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                :disabled="actionLoading"
+                                class="w-full sm:flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md shadow-amber-600/20 active-press transition cursor-pointer disabled:opacity-60"
+                                @click="nonaktifkanDariModal"
+                            >
+                                <Power class="h-4 w-4" />
+                                <span>{{ actionLoading ? 'Memproses…' : 'Nonaktifkan Sekarang' }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KONDISI 2: Barang sudah Nonaktif ATAU belum pernah diperjualbelikan (Boleh Dihapus) -->
+                    <div v-else class="flex flex-col items-center text-center">
+                        <div
+                            class="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-400 mb-3.5 shadow-xs"
+                        >
+                            <Trash2 class="h-8 w-8" />
+                        </div>
+
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                            Konfirmasi Hapus Barang
+                        </h3>
+
+                        <div class="mt-3.5 w-full rounded-2xl bg-slate-50 border border-slate-100 p-3 text-left dark:bg-slate-800/60 dark:border-slate-800">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-500 dark:text-slate-400">Nama Barang:</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
+                                    {{ barangToDelete.nama }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs mt-1.5">
+                                <span class="text-slate-500 dark:text-slate-400">Status Produk:</span>
+                                <span class="font-bold text-slate-600 dark:text-slate-300">
+                                    {{ isTraded ? '○ Nonaktif (Siap Dihapus)' : 'Barang Baru (Belum Ditransaksikan)' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="mt-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed text-center">
+                            <template v-if="isTraded">
+                                Menghapus barang ini akan mengarsipkannya dari katalog master produk, dan seluruh histori laporan transaksi masa lalu tetap tersimpan dengan aman.
+                            </template>
+                            <template v-else>
+                                Yakin ingin menghapus permanen barang ini? Barang belum memiliki riwayat transaksi dan data barcode dapat dipakai kembali.
+                            </template>
+                        </p>
+
+                        <div class="mt-5 flex w-full flex-col-reverse sm:flex-row items-center gap-2">
+                            <button
+                                type="button"
+                                class="w-full sm:flex-1 rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 active-press dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition cursor-pointer"
+                                @click="deleteModalOpen = false"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                :disabled="actionLoading"
+                                class="w-full sm:flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md shadow-rose-600/20 active-press transition cursor-pointer disabled:opacity-60"
+                                @click="eksekusiHapus"
+                            >
+                                <Trash2 class="h-4 w-4" />
+                                <span>{{ actionLoading ? 'Menghapus…' : 'Ya, Hapus Barang' }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </PosLayout>
 </template>

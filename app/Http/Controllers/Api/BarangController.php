@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Barang;
+use App\Models\Kategori;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class BarangController extends BaseApiController
     public function index(Request $request): JsonResponse
     {
         $query = Barang::with(['kategori', 'kelompokKategori', 'supplier', 'sekolah'])
+            ->withCount(['detailPenjualan', 'detailPembelian'])
             ->where('is_delete', 0);
 
         if ($request->filled('id_sekolah')) {
@@ -151,6 +153,7 @@ class BarangController extends BaseApiController
                 'id_barang' => $b->id_barang,
                 'nama' => $b->nama,
                 'barcode' => $b->barcode,
+                'foto' => $b->foto,
                 'satuan' => $b->satuan,
                 'harga_beli' => (float) $b->harga_beli,
                 'harga_jual' => (float) $b->harga_jual,
@@ -250,6 +253,7 @@ class BarangController extends BaseApiController
                 'harga_beli' => $localBarang->harga_beli,
                 'harga_jual' => $localBarang->harga_jual,
                 'satuan' => $localBarang->satuan,
+                'foto' => $localBarang->foto,
                 'id_kategori' => $localBarang->id_kategori,
                 'id_kelompok_kategori' => $localBarang->id_kelompok_kategori,
                 'id_supplier' => $localBarang->id_supplier,
@@ -274,6 +278,7 @@ class BarangController extends BaseApiController
                 'harga_beli' => $globalBarang->harga_beli,
                 'harga_jual' => $globalBarang->harga_jual,
                 'satuan' => $globalBarang->satuan,
+                'foto' => $globalBarang->foto,
             ], 'Barang ditemukan dari katalog bersama EduMart.');
         }
 
@@ -361,6 +366,7 @@ class BarangController extends BaseApiController
 
                     $brand = !empty($prod['brands']) ? trim($prod['brands']) : null;
                     $fullName = $nama ? ($brand && !str_contains(strtolower($nama), strtolower($brand)) ? "{$brand} {$nama}" : $nama) : null;
+                    $foto = $prod['image_front_url'] ?? $prod['image_url'] ?? $prod['image_small_url'] ?? null;
 
                     if ($fullName) {
                         return $this->ok([
@@ -369,6 +375,7 @@ class BarangController extends BaseApiController
                             'nama' => trim($fullName),
                             'barcode' => $barcode,
                             'brand' => $brand,
+                            'foto' => $foto,
                         ], 'Informasi produk ditemukan dari database kemasan publik.');
                     }
                 }
@@ -412,14 +419,19 @@ class BarangController extends BaseApiController
             'barcode' => 'nullable|string|max:50|unique:tb_barang,barcode',
             'nama' => 'required|string|max:150',
             'id_kategori' => 'required|integer|exists:tb_kategori,id_kategori',
-            'id_kelompok_kategori' => 'required|integer|exists:tb_kelompok_kategori,id_kelompok',
+            'id_kelompok_kategori' => 'nullable|integer|exists:tb_kelompok_kategori,id_kelompok',
             'id_supplier' => 'required|integer|exists:tb_supplier,id_supplier',
             'satuan' => 'required|string|max:20',
+            'foto' => 'nullable|string|max:500000',
             'harga_beli' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'is_active' => 'sometimes|boolean',
         ]);
+
+        if (empty($data['id_kelompok_kategori']) && !empty($data['id_kategori'])) {
+            $data['id_kelompok_kategori'] = Kategori::where('id_kategori', $data['id_kategori'])->value('id_kelompok');
+        }
 
         try {
             $barang = Barang::create([
@@ -450,14 +462,19 @@ class BarangController extends BaseApiController
             'barcode' => ['nullable', 'string', 'max:50', Rule::unique('tb_barang', 'barcode')->ignore($id, 'id_barang')],
             'nama' => 'sometimes|string|max:150',
             'id_kategori' => 'sometimes|integer|exists:tb_kategori,id_kategori',
-            'id_kelompok_kategori' => 'sometimes|integer|exists:tb_kelompok_kategori,id_kelompok',
+            'id_kelompok_kategori' => 'nullable|integer|exists:tb_kelompok_kategori,id_kelompok',
             'id_supplier' => 'sometimes|integer|exists:tb_supplier,id_supplier',
             'satuan' => 'sometimes|string|max:20',
+            'foto' => 'nullable|string|max:500000',
             'harga_beli' => 'sometimes|numeric|min:0',
             'harga_jual' => 'sometimes|numeric|min:0',
             'stok' => 'sometimes|integer|min:0',
             'is_active' => 'sometimes|boolean',
         ]);
+
+        if (array_key_exists('id_kategori', $data) && empty($data['id_kelompok_kategori'])) {
+            $data['id_kelompok_kategori'] = Kategori::where('id_kategori', $data['id_kategori'])->value('id_kelompok');
+        }
 
         try {
             $barang->update([...$data, 'updated_at' => now(), 'updated_by' => 1]);
@@ -475,14 +492,35 @@ class BarangController extends BaseApiController
             return $this->fail('Barang tidak ditemukan.', 404);
         }
 
-        try {
-            Schema::disableForeignKeyConstraints();
-            DB::table('tb_detail_penjualan')->where('id_barang', $id)->delete();
-            DB::table('tb_detail_pembelian')->where('id_barang', $id)->delete();
-            $barang->delete();
-            Schema::enableForeignKeyConstraints();
+        // Cek apakah barang sudah pernah diperjualbelikan (ada histori transaksi penjualan atau pembelian)
+        $hasPenjualan = DB::table('tb_detail_penjualan')->where('id_barang', $id)->exists();
+        $hasPembelian = DB::table('tb_detail_pembelian')->where('id_barang', $id)->exists();
+        $sudahDiperjualbelikan = $hasPenjualan || $hasPembelian;
 
-            return $this->ok(null, 'Barang berhasil dihapus. Barcode/kode bisa dipakai lagi.');
+        // Jika barang sudah diperjualbelikan dan masih aktif dijual, tolak penghapusan
+        if ($sudahDiperjualbelikan && $barang->is_active) {
+            return $this->fail('data barang tersebut masih diperjual belikan, mohon pertimbangkan lagi', 422);
+        }
+
+        try {
+            if ($sudahDiperjualbelikan) {
+                // Arsipkan barang (soft-delete) agar laporan keuangan & histori struk transaksi masa lalu tetap utuh
+                $barang->update([
+                    'is_delete' => 1,
+                    'is_active' => false,
+                    'deleted_at' => now(),
+                    'deleted_by' => 1,
+                ]);
+            } else {
+                // Barang baru yang belum pernah diperjualbelikan dihapus permanen
+                Schema::disableForeignKeyConstraints();
+                DB::table('tb_detail_penjualan')->where('id_barang', $id)->delete();
+                DB::table('tb_detail_pembelian')->where('id_barang', $id)->delete();
+                $barang->delete();
+                Schema::enableForeignKeyConstraints();
+            }
+
+            return $this->ok(null, 'Barang berhasil dihapus.');
         } catch (QueryException $e) {
             Schema::enableForeignKeyConstraints();
 
@@ -517,5 +555,63 @@ class BarangController extends BaseApiController
         $barang->update(['stok' => $baru, 'updated_at' => now(), 'updated_by' => 1]);
 
         return $this->ok($barang->fresh(), 'Stok berhasil diperbarui.');
+    }
+
+    /**
+     * Ekstrak URL foto produk secara cerdas jika user memasukkan link halaman web (e.g. Tokopedia, Shopee, Astronauts, dll).
+     */
+    public function extractImageFromUrl(Request $request): JsonResponse
+    {
+        $url = trim($request->string('url')->toString());
+        if (! filter_var($url, FILTER_VALIDATE_URL)) {
+            return $this->fail('Format URL tidak valid.', 422);
+        }
+
+        // Jika URL sudah berakhiran ekstensi gambar langsung
+        $cleanPath = parse_url($url, PHP_URL_PATH);
+        if ($cleanPath && preg_match('/\.(jpg|jpeg|png|webp|gif|svg|avif)$/i', $cleanPath)) {
+            return $this->ok(['image_url' => $url], 'Link gambar langsung.');
+        }
+
+        try {
+            $resp = Http::timeout(6)
+                ->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                ])
+                ->get($url);
+
+            if (! $resp->successful()) {
+                return $this->fail('Halaman web tidak dapat diakses (status code: ' . $resp->status() . ').', 422);
+            }
+
+            $html = $resp->body();
+
+            $patterns = [
+                '/<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']/i',
+                '/<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']/i',
+                '/<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']/i',
+                '/<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']/i',
+                '/<link[^>]+rel=["\']image_src["\'][^>]+href=["\']([^"\']+)["\']/i',
+            ];
+
+            foreach ($patterns as $pattern) {
+                if (preg_match($pattern, $html, $matches)) {
+                    $imageUrl = html_entity_decode(trim($matches[1]));
+                    if (str_starts_with($imageUrl, '//')) {
+                        $imageUrl = 'https:' . $imageUrl;
+                    } elseif (str_starts_with($imageUrl, '/')) {
+                        $parsedUrl = parse_url($url);
+                        $imageUrl = ($parsedUrl['scheme'] ?? 'https') . '://' . ($parsedUrl['host'] ?? '') . $imageUrl;
+                    }
+
+                    return $this->ok(['image_url' => $imageUrl], 'Foto produk berhasil diekstrak dari halaman web.');
+                }
+            }
+
+            return $this->fail('Tidak ditemukan foto produk pada halaman web tersebut.', 404);
+        } catch (\Throwable $e) {
+            return $this->fail('Gagal mengekstrak foto dari halaman web: ' . $e->getMessage(), 500);
+        }
     }
 }

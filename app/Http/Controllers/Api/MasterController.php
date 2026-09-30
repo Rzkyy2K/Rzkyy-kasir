@@ -26,6 +26,10 @@ class MasterController extends BaseApiController
             $query->where('is_active', 1);
         }
 
+        if ($request->boolean('all') || $request->boolean('with_users')) {
+            $query->with(['users.role'])->withCount('users');
+        }
+
         return $this->ok($query->orderBy('nama_sekolah')->get());
     }
 
@@ -151,6 +155,7 @@ class MasterController extends BaseApiController
 
         $barang = Barang::with(['kategori', 'supplier'])
             ->where('is_delete', 0)
+            ->where('is_active', 1)
             ->when($sekolahId, fn ($q) => $q->where('id_sekolah', $sekolahId))
             ->orderBy('nama')->get();
 

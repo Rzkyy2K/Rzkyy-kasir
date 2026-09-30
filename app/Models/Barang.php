@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Barang extends Model
 {
@@ -43,5 +44,15 @@ class Barang extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'id_supplier', 'id_supplier');
+    }
+
+    public function detailPenjualan(): HasMany
+    {
+        return $this->hasMany(DetailPenjualan::class, 'id_barang', 'id_barang');
+    }
+
+    public function detailPembelian(): HasMany
+    {
+        return $this->hasMany(DetailPembelian::class, 'id_barang', 'id_barang');
     }
 }

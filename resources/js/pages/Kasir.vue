@@ -420,7 +420,7 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                 <!-- Grid Cards Mode -->
                 <div
                     v-else-if="viewMode === 'grid'"
-                    class="mt-4 grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4"
+                    class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5"
                 >
                     <ProductCard
                         v-for="b in hasil"

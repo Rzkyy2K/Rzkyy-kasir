@@ -8,8 +8,10 @@ import {
     Calendar,
     CheckCircle2,
     DollarSign,
+    LayoutGrid,
     RefreshCw,
     Sparkles,
+    Table,
     TrendingDown,
     Truck,
 } from '@lucide/vue';
@@ -40,6 +42,23 @@ const lastPage = ref(1);
 const total = ref(0);
 const search = ref('');
 const hanyaRendah = ref(false);
+
+const viewMode = ref<'card' | 'table'>('card');
+if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('pos_stok_view_mode');
+    if (saved === 'card' || saved === 'table') {
+        viewMode.value = saved;
+    }
+}
+
+function setViewMode(mode: 'card' | 'table') {
+    viewMode.value = mode;
+    try {
+        localStorage.setItem('pos_stok_view_mode', mode);
+    } catch {
+        // no-op
+    }
+}
 
 const showAdjust = ref(false);
 const target = ref<Barang | null>(null);
@@ -270,23 +289,57 @@ watch(prediksiFilter, () => {
 
         <!-- ================= TAB 1: KELOLA STOK FISIK ================= -->
         <div v-if="activeTab === 'fisik'">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex-1">
                     <SearchBar
                         v-model="search"
                         @update:model-value="onSearch"
                     />
                 </div>
-                <label
-                    class="inline-flex cursor-pointer items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300"
-                >
-                    <input
-                        v-model="hanyaRendah"
-                        type="checkbox"
-                        class="h-4 w-4 rounded accent-blue-700 cursor-pointer"
-                    />
-                    Hanya tampilkan stok menipis (≤ 10)
-                </label>
+                <div class="flex flex-wrap items-center gap-3">
+                    <label
+                        class="inline-flex cursor-pointer items-center gap-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300"
+                    >
+                        <input
+                            v-model="hanyaRendah"
+                            type="checkbox"
+                            class="h-4 w-4 rounded accent-blue-700 cursor-pointer"
+                        />
+                        <span>Hanya stok menipis (≤ 10)</span>
+                    </label>
+
+                    <!-- Switcher Mode: Card & Tabel -->
+                    <div class="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100/90 p-1 dark:border-slate-800 dark:bg-slate-900">
+                        <button
+                            type="button"
+                            :class="[
+                                'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition',
+                                viewMode === 'card'
+                                    ? 'bg-white text-blue-700 shadow-2xs dark:bg-slate-800 dark:text-blue-400'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                            ]"
+                            title="Tampilan Card"
+                            @click="setViewMode('card')"
+                        >
+                            <LayoutGrid class="h-4 w-4" />
+                            <span>Card</span>
+                        </button>
+                        <button
+                            type="button"
+                            :class="[
+                                'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition',
+                                viewMode === 'table'
+                                    ? 'bg-white text-blue-700 shadow-2xs dark:bg-slate-800 dark:text-blue-400'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                            ]"
+                            title="Tampilan Tabel"
+                            @click="setViewMode('table')"
+                        >
+                            <Table class="h-4 w-4" />
+                            <span>Tabel</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div v-if="loading" class="mt-4 space-y-2">
@@ -302,8 +355,9 @@ watch(prediksiFilter, () => {
                 title="Belum Ada Data Stok"
             />
             <template v-else>
-                <!-- Unified Responsive Card Grid -->
+                <!-- 1. Tampilan Card / Grid -->
                 <div
+                    v-if="viewMode === 'card'"
                     class="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
                 >
                     <div
@@ -315,9 +369,18 @@ watch(prediksiFilter, () => {
                         <div>
                             <div class="flex items-start gap-3 min-w-0">
                                 <div
-                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-bold text-sm text-blue-700 dark:bg-blue-950/60 dark:text-blue-400"
+                                    class="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 font-bold text-sm text-blue-700 dark:border-slate-800 dark:bg-slate-800 dark:text-blue-400"
                                 >
-                                    <Boxes class="h-5 w-5" />
+                                    <img
+                                        v-if="b.foto"
+                                        :src="b.foto"
+                                        :alt="b.nama"
+                                        class="h-full w-full object-contain p-0.5"
+                                        loading="lazy"
+                                        referrerpolicy="no-referrer"
+                                        @error="(e) => (e.target as HTMLElement).style.display = 'none'"
+                                    />
+                                    <Boxes v-else class="h-5 w-5" />
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <div
@@ -399,6 +462,126 @@ watch(prediksiFilter, () => {
                                 <span>Atur Stok</span>
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 2. Tampilan Tabel -->
+                <div
+                    v-else
+                    class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-190 text-left text-xs text-slate-700 dark:text-slate-200">
+                            <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                                <tr>
+                                    <th class="px-4 py-3.5">Produk</th>
+                                    <th class="px-4 py-3.5">Kategori</th>
+                                    <th class="px-4 py-3.5 text-right">Harga Beli</th>
+                                    <th class="px-4 py-3.5 text-right">Harga Jual</th>
+                                    <th class="px-4 py-3.5 text-center">Jumlah Stok</th>
+                                    <th class="px-4 py-3.5 text-center">Status</th>
+                                    <th class="px-4 py-3.5 text-right">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                                <tr
+                                    v-for="b in rows"
+                                    :key="b.id_barang"
+                                    class="transition hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                                >
+                                    <!-- Produk -->
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 font-bold text-xs text-blue-700 dark:border-slate-800 dark:bg-slate-800 dark:text-blue-400"
+                                            >
+                                                <img
+                                                    v-if="b.foto"
+                                                    :src="b.foto"
+                                                    :alt="b.nama"
+                                                    class="h-full w-full object-contain p-0.5"
+                                                    loading="lazy"
+                                                    referrerpolicy="no-referrer"
+                                                    @error="(e) => (e.target as HTMLElement).style.display = 'none'"
+                                                />
+                                                <Boxes v-else class="h-4.5 w-4.5" />
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="font-bold text-slate-900 dark:text-slate-100">
+                                                    {{ b.nama }}
+                                                </div>
+                                                <div class="text-[11px] text-slate-400 dark:text-slate-500">
+                                                    {{ b.barcode || 'Tanpa Barcode' }} · {{ b.satuan }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <!-- Kategori -->
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="inline-block rounded-lg bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-400"
+                                        >
+                                            {{ b.kategori?.nama ?? 'Umum' }}
+                                        </span>
+                                    </td>
+                                    <!-- Harga Beli -->
+                                    <td class="px-4 py-3 text-right font-medium text-slate-600 dark:text-slate-300">
+                                        {{ rupiah(b.harga_beli) }}
+                                    </td>
+                                    <!-- Harga Jual -->
+                                    <td class="px-4 py-3 text-right font-bold text-blue-700 dark:text-blue-400">
+                                        {{ rupiah(b.harga_jual) }}
+                                    </td>
+                                    <!-- Jumlah Stok -->
+                                    <td class="px-4 py-3 text-center">
+                                        <span
+                                            class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-extrabold"
+                                            :class="
+                                                b.stok <= 0
+                                                    ? 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400'
+                                                    : b.stok <= 10
+                                                    ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400'
+                                                    : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+                                            "
+                                        >
+                                            {{ b.stok }} {{ b.satuan }}
+                                        </span>
+                                    </td>
+                                    <!-- Status -->
+                                    <td class="px-4 py-3 text-center">
+                                        <span
+                                            v-if="b.stok <= 0"
+                                            class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-950/60 dark:text-red-400"
+                                        >
+                                            Habis
+                                        </span>
+                                        <span
+                                            v-else-if="b.stok <= 10"
+                                            class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
+                                        >
+                                            Rendah
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
+                                        >
+                                            Aman
+                                        </span>
+                                    </td>
+                                    <!-- Tindakan -->
+                                    <td class="px-4 py-3 text-right">
+                                        <button
+                                            type="button"
+                                            class="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs"
+                                            @click="bukaAdjust(b)"
+                                        >
+                                            <ArrowDownUp class="h-3.5 w-3.5" />
+                                            <span>Atur Stok</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </template>
