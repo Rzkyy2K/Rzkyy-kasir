@@ -5,6 +5,7 @@ export interface Sekolah {
     alamat?: string | null;
     alamat_sekolah?: string | null;
     website?: string | null;
+    foto_qris?: string | null;
     is_active?: boolean;
     users?: PosUser[];
     users_count?: number;

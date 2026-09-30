@@ -1,14 +1,159 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { KeyRound, Palette, Settings } from '@lucide/vue';
-import { onMounted } from 'vue';
+import {
+    CheckCircle2,
+    KeyRound,
+    Palette,
+    QrCode,
+    RefreshCw,
+    Save,
+    Settings,
+    Trash2,
+    Upload,
+} from '@lucide/vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import EmptyState from '@/components/pos/EmptyState.vue';
 import PageHeader from '@/components/pos/PageHeader.vue';
 import PosLayout from '@/layouts/PosLayout.vue';
+import { friendlyError } from '@/services/api';
+import { updateSekolah } from '@/services/masterService';
 import { usePosStore } from '@/stores/pos';
 
 const pos = usePosStore();
+
+const defaultQris = '/qris.jpg';
+const qrisInput = ref('');
+const qrisPreview = ref(defaultQris);
+const savingQris = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+
+watch(
+    () => pos.sekolahAktif,
+    (s) => {
+        if (s) {
+            qrisInput.value = s.foto_qris || '';
+            qrisPreview.value = s.foto_qris || defaultQris;
+        }
+    },
+    { immediate: true },
+);
+
+const isCustomQris = computed(() => {
+    return Boolean(qrisInput.value && qrisInput.value.trim().length > 0);
+});
+
+function onUrlChange() {
+    if (qrisInput.value.trim()) {
+        qrisPreview.value = qrisInput.value.trim();
+    } else {
+        qrisPreview.value = defaultQris;
+    }
+}
+
+function compressImage(file: File, maxWidth = 1000, quality = 0.85): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    resolve(event.target?.result as string);
+                    return;
+                }
+
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedDataUrl);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+async function handleFileUpload(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast.error('File harus berupa gambar (JPG, PNG, WebP).');
+        return;
+    }
+
+    try {
+        toast.info('Memproses & mengoptimalkan foto QRIS...');
+        const optimized = await compressImage(file);
+        qrisInput.value = optimized;
+        qrisPreview.value = optimized;
+        toast.success('Foto QRIS siap! Klik tombol "Simpan Foto QRIS" di bawah untuk menyimpan.');
+    } catch (e) {
+        // Fallback jika canvas gagal
+        const reader = new FileReader();
+        reader.onload = (re) => {
+            const result = re.target?.result as string;
+            if (result) {
+                qrisInput.value = result;
+                qrisPreview.value = result;
+                toast.info('Foto QRIS dimuat. Klik "Simpan Foto QRIS" untuk menyimpan.');
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function triggerFileInput() {
+    fileInput.value?.click();
+}
+
+function resetToDefault() {
+    qrisInput.value = '';
+    qrisPreview.value = defaultQris;
+    if (fileInput.value) fileInput.value.value = '';
+    toast.info('QRIS diatur kembali ke QRIS bawaan sistem. Klik "Simpan Foto QRIS" untuk menyimpan.');
+}
+
+async function simpanQris() {
+    const targetId = pos.idSekolah || pos.me?.id_sekolah || pos.sekolahAktif?.id_sekolah;
+    if (!targetId) {
+        toast.error('Data sekolah aktif tidak ditemukan.');
+        return;
+    }
+
+    savingQris.value = true;
+    try {
+        const payload = {
+            foto_qris: qrisInput.value.trim() || null,
+        };
+        const res = await updateSekolah(targetId, payload);
+        toast.success(res.message || 'Foto QRIS sekolah berhasil diperbarui!');
+        await pos.refreshSekolah();
+        if (pos.me?.sekolah && pos.me.sekolah.id_sekolah === targetId) {
+            pos.me.sekolah.foto_qris = payload.foto_qris;
+        }
+    } catch (e: any) {
+        toast.error(friendlyError(e, 'Gagal menyimpan foto QRIS.'));
+    } finally {
+        savingQris.value = false;
+    }
+}
 
 onMounted(() => {
     void pos.init();
@@ -21,7 +166,7 @@ onMounted(() => {
         <PageHeader
             title="Pengaturan"
             :icon="Settings"
-            subtitle="Preferensi aplikasi, tema tampilan, dan informasi akun aktif"
+            subtitle="Preferensi aplikasi, tema tampilan, konfigurasi QRIS kasir, dan informasi akun aktif"
         />
 
         <!-- Tema Tampilan Card -->
@@ -60,6 +205,135 @@ onMounted(() => {
             >
                 <KeyRound class="h-4 w-4" /> Ubah Kata Sandi
             </Link>
+        </div>
+
+        <!-- Konfigurasi QRIS Pembayaran Kasir (Super Admin & Developer) -->
+        <div
+            v-if="pos.can('pengaturan')"
+            class="mb-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900 shadow-2xs"
+        >
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800/80">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400">
+                        <QrCode class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-sm font-bold text-slate-900 dark:text-white">
+                                Foto QRIS Pembayaran Kasir
+                            </h2>
+                            <span
+                                v-if="isCustomQris"
+                                class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                            >
+                                <CheckCircle2 class="h-3 w-3" /> QRIS Kustom Aktif
+                            </span>
+                            <span
+                                v-else
+                                class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            >
+                                QRIS Bawaan Default
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                            Atur poster barcode QRIS untuk toko <strong>{{ pos.sekolahAktif?.nama_sekolah ?? 'sekolah' }}</strong>. Foto ini akan otomatis ditampilkan di layar kasir saat kasir/pembeli memilih metode pembayaran QRIS.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 grid gap-6 md:grid-cols-12 items-start">
+                <!-- Preview Gambar QRIS -->
+                <div class="md:col-span-4 flex flex-col items-center">
+                    <div class="w-full max-w-[240px] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-3 text-center dark:border-slate-800 dark:bg-slate-950/40">
+                        <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                            Pratinjau di Kasir
+                        </p>
+                        <div class="relative mx-auto flex h-60 w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                            <img
+                                :src="qrisPreview"
+                                :alt="'QRIS ' + (pos.sekolahAktif?.nama_sekolah ?? 'Toko')"
+                                class="h-full w-full object-contain p-1"
+                                @error="qrisPreview = defaultQris"
+                            />
+                        </div>
+                        <p class="mt-2 text-[10px] text-slate-400 leading-tight">
+                            Format JPG, PNG, atau WebP
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Kontrol & Upload QRIS -->
+                <div class="md:col-span-8 space-y-4">
+                    <!-- Opsi 1: Upload File -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                            Unggah Foto QRIS dari Perangkat (HP / Laptop)
+                        </label>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <input
+                                ref="fileInput"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/jpg"
+                                class="hidden"
+                                @change="handleFileUpload"
+                            />
+                            <button
+                                type="button"
+                                class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:bg-blue-900/60"
+                                @click="triggerFileInput"
+                            >
+                                <Upload class="h-4 w-4" /> Pilih File Gambar QRIS
+                            </button>
+                            <button
+                                v-if="isCustomQris"
+                                type="button"
+                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-red-900/60 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                                title="Reset ke QRIS Default"
+                                @click="resetToDefault"
+                            >
+                                <Trash2 class="h-3.5 w-3.5" /> Gunakan QRIS Default
+                            </button>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Pilih file foto/poster barcode QRIS resmi dari bank atau e-wallet toko Anda (maksimal 3 MB).
+                        </p>
+                    </div>
+
+                    <!-- Opsi 2: URL Link Gambar -->
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                            Atau Masukkan Tautan / Link URL Foto QRIS
+                        </label>
+                        <div class="relative">
+                            <input
+                                v-model="qrisInput"
+                                type="text"
+                                placeholder="Contoh: https://domain.com/qris-sekolah.jpg atau data:image/..."
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                @input="onUrlChange"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Action Simpan -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            Perubahan akan langsung aktif untuk kasir di instansi <strong>{{ pos.sekolahAktif?.nama_sekolah ?? 'aktif' }}</strong>.
+                        </p>
+                        <button
+                            type="button"
+                            :disabled="savingQris"
+                            class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500 shadow-xs"
+                            @click="simpanQris"
+                        >
+                            <RefreshCw v-if="savingQris" class="h-4 w-4 animate-spin" />
+                            <Save v-else class="h-4 w-4" />
+                            <span>{{ savingQris ? 'Menyimpan…' : 'Simpan Foto QRIS' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <EmptyState

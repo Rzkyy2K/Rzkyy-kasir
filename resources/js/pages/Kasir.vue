@@ -459,15 +459,20 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
             </div>
         </div>
 
-        <!-- Floating cart (mobile/tablet) -->
+        <!-- Floating cart (mobile/tablet) - Selalu bisa dibuka agar kasir bisa melihat pembayaran kapan saja -->
         <button
-            v-if="cart.count > 0"
             type="button"
-            class="fixed right-4 bottom-20 z-40 flex items-center gap-1.5 rounded-full bg-blue-700 px-5 py-3.5 text-sm font-bold text-white shadow-xl xl:hidden active-press tabular-nums"
+            class="fixed right-4 bottom-20 z-40 flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold shadow-xl xl:hidden active-press tabular-nums transition"
+            :class="
+                cart.count > 0
+                    ? 'bg-blue-700 text-white hover:bg-blue-800'
+                    : 'bg-slate-900/90 text-white hover:bg-slate-900 border border-slate-700 backdrop-blur-sm'
+            "
             @click="cartOpen = true"
         >
             <ShoppingCart class="h-5 w-5" />
-            {{ cart.count }} item · {{ rupiah(cart.total) }}
+            <span v-if="cart.count > 0">{{ cart.count }} item · {{ rupiah(cart.total) }}</span>
+            <span v-else>Lihat Pembayaran (0)</span>
         </button>
 
         <!-- Bottom sheet keranjang -->

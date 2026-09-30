@@ -46,6 +46,7 @@ class MasterController extends BaseApiController
             'alamat_sekolah' => 'sometimes|nullable|string',
             'alamat' => 'sometimes|nullable|string|max:255',
             'website' => 'sometimes|nullable|string|max:200',
+            'foto_qris' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -74,6 +75,7 @@ class MasterController extends BaseApiController
             'alamat_sekolah' => 'sometimes|nullable|string',
             'alamat' => 'sometimes|nullable|string|max:255',
             'website' => 'sometimes|nullable|string|max:200',
+            'foto_qris' => 'sometimes|nullable|string',
             'is_active' => 'sometimes|boolean',
         ]);
 

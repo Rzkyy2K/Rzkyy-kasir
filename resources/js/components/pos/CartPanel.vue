@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Clock, Minus, PauseCircle, Plus, Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Clock, Maximize2, Minus, PauseCircle, Plus, QrCode, Trash2 } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
 import { rupiah } from '@/lib/format';
 import { useCartStore } from '@/stores/cart';
+import Modal from '@/components/pos/Modal.vue';
+import qrisAsset from '@/assets/qris.jpg';
 
 const props = withDefaults(
     defineProps<{ compact?: boolean; bayarLoading?: boolean }>(),
@@ -17,12 +19,49 @@ const emit = defineEmits<{
 const cart = useCartStore();
 const nominal = ref<number>(0);
 const cara = ref('tunai');
+const showQrisModal = ref(false);
+const qrisImage = qrisAsset || '/qris.jpg';
+
+const activeQrisImage = computed(() => {
+    return pos.sekolahAktif?.foto_qris || pos.me?.sekolah?.foto_qris || qrisImage;
+});
+
+const qrisStoreName = computed(() => {
+    return pos.sekolahAktif?.nama_sekolah || pos.me?.sekolah?.nama_sekolah || 'RZKYY MARKET';
+});
+
+const qrisCode = computed(() => {
+    return pos.sekolahAktif?.kode_sekolah ? `KODE: ${pos.sekolahAktif.kode_sekolah}` : 'ID1026603478557';
+});
+
 const kembalian = computed(() =>
     Math.max(0, (nominal.value || 0) - cart.total),
 );
 
+watch(cara, (newVal) => {
+    if (newVal === 'qris') {
+        nominal.value = cart.total;
+        showQrisModal.value = true;
+    }
+});
+
+watch(
+    () => cart.total,
+    (newTotal) => {
+        if (cara.value === 'qris') {
+            nominal.value = newTotal;
+        }
+    },
+);
+
 function bayar() {
     emit('bayar', { nominal: nominal.value || 0, cara: cara.value });
+}
+
+function handleQrisBayar() {
+    nominal.value = cart.total;
+    showQrisModal.value = false;
+    bayar();
 }
 
 function onDiskonPersenInput(e: Event) {
@@ -234,21 +273,75 @@ defineExpose({ setNominal: (v: number) => (nominal.value = v) });
                         v-model.number="nominal"
                         type="number"
                         min="0"
-                        class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm font-semibold tabular-nums dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        :readonly="cara === 'qris'"
+                        class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm font-semibold tabular-nums dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 transition"
+                        :class="{ 'bg-slate-100 text-slate-500 cursor-not-allowed dark:bg-slate-800/60': cara === 'qris' }"
                     />
                 </label>
                 <label class="text-xs text-slate-500 dark:text-slate-400"
                     >Metode Pembayaran
                     <select
                         v-model="cara"
-                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 transition"
+                        :class="{ 'border-red-400 text-red-700 dark:border-red-600 dark:text-red-400': cara === 'qris' }"
                     >
                         <option value="tunai">Tunai</option>
                         <option value="transfer">Transfer Bank</option>
-                        <option value="qris">QRIS</option>
+                        <option value="qris">QRIS ({{ qrisStoreName }})</option>
                     </select>
                 </label>
             </div>
+
+            <!-- Tampilan Card QRIS saat metode QRIS dipilih -->
+            <div
+                v-if="cara === 'qris'"
+                class="rounded-xl border border-red-200 bg-gradient-to-b from-red-50/80 via-white to-white p-2.5 shadow-2xs dark:border-red-900/50 dark:from-red-950/20 dark:via-slate-900 dark:to-slate-900 animate-fadeIn"
+            >
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="inline-flex shrink-0 items-center justify-center rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black tracking-wider text-white">
+                            QRIS
+                        </span>
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                            {{ qrisStoreName }}
+                        </span>
+                    </div>
+                    <span class="shrink-0 text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                        {{ qrisCode }}
+                    </span>
+                </div>
+
+                <div class="mt-2 flex items-center gap-2.5">
+                    <div
+                        class="group relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-2xs transition hover:scale-105 hover:border-red-400 dark:border-slate-700"
+                        title="Klik untuk memperbesar QRIS"
+                        @click="showQrisModal = true"
+                    >
+                        <img
+                            :src="activeQrisImage"
+                            :alt="'QRIS ' + qrisStoreName"
+                            class="h-full w-full object-contain"
+                        />
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100">
+                            <Maximize2 class="h-4 w-4 text-white" />
+                        </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] font-medium leading-snug text-slate-600 dark:text-slate-300">
+                            Scan via GoPay, OVO, Dana, ShopeePay, BCA, Mandiri, dll.
+                        </p>
+                        <button
+                            type="button"
+                            class="mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-600 transition hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/70"
+                            @click="showQrisModal = true"
+                        >
+                            <Maximize2 class="h-3 w-3" />
+                            <span>Perbesar QRIS</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex justify-between text-sm">
                 <span class="text-slate-500 dark:text-slate-400">Kembalian</span>
                 <span
@@ -270,5 +363,63 @@ defineExpose({ setNominal: (v: number) => (nominal.value = v) });
                 }}
             </button>
         </div>
+
+        <!-- Modal Popup QRIS Penuh -->
+        <Modal
+            :open="showQrisModal"
+            :title="'Pembayaran QRIS - ' + qrisStoreName"
+            @close="showQrisModal = false"
+        >
+            <div class="flex flex-col items-center text-center">
+                <!-- Header Info -->
+                <div class="flex items-center gap-2">
+                    <span class="rounded bg-red-600 px-2 py-0.5 text-xs font-black tracking-wider text-white">QRIS</span>
+                    <span class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                        {{ qrisStoreName }}
+                    </span>
+                </div>
+                <p class="mt-0.5 text-xs font-mono text-slate-400">{{ qrisCode }}</p>
+
+                <!-- Total Pembayaran -->
+                <div class="my-3 w-full rounded-xl border border-red-100 bg-red-50/70 p-2.5 text-center dark:border-red-900/40 dark:bg-red-950/30">
+                    <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Tagihan Pembayaran</p>
+                    <p class="mt-0.5 text-2xl font-black tabular-nums text-red-600 dark:text-red-400">
+                        {{ rupiah(cart.total) }}
+                    </p>
+                </div>
+
+                <!-- Foto Asli Poster QRIS -->
+                <div class="relative w-full max-w-[280px] sm:max-w-[320px] overflow-hidden rounded-2xl border-2 border-slate-200 bg-white p-2 shadow-md dark:border-slate-700">
+                    <img
+                        :src="activeQrisImage"
+                        :alt="'QRIS ' + qrisStoreName"
+                        class="h-auto w-full max-h-[380px] rounded-xl object-contain"
+                    />
+                </div>
+
+                <p class="mt-3 max-w-xs text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    Arahkan kamera e-wallet atau mobile banking (GoPay, OVO, Dana, ShopeePay, BCA, BRI, Mandiri, dll.) ke kode QR di atas.
+                </p>
+
+                <!-- Tombol Aksi -->
+                <div class="mt-4 flex w-full gap-2">
+                    <button
+                        type="button"
+                        class="flex-1 cursor-pointer rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        @click="showQrisModal = false"
+                    >
+                        Tutup
+                    </button>
+                    <button
+                        type="button"
+                        :disabled="bayarLoading || cart.items.length === 0"
+                        class="flex-1 cursor-pointer rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-800"
+                        @click="handleQrisBayar"
+                    >
+                        {{ bayarLoading ? 'Memproses…' : 'Sudah Bayar' }}
+                    </button>
+                </div>
+            </div>
+        </Modal>
     </div>
 </template>
