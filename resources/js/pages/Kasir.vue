@@ -323,7 +323,8 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
             subtitle="Layanan transaksi penjualan cepat dan cetak struk kasir"
             :icon="ShoppingCart"
         />
-        <div class="gap-4 xl:grid xl:grid-cols-[1fr_360px]">
+
+        <div class="gap-4 lg:grid lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px]">
             <!-- Area produk -->
             <div class="min-w-0">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -446,8 +447,8 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                 </div>
             </div>
 
-            <!-- Keranjang desktop -->
-            <div class="hidden xl:block">
+            <!-- Keranjang desktop (Layar Laptop & PC >= lg) -->
+            <div class="hidden lg:block">
                 <div class="sticky top-20 max-h-[calc(100vh-7rem)]">
                     <CartPanel
                         :bayar-loading="bayarLoading"
@@ -459,29 +460,29 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
             </div>
         </div>
 
-        <!-- Floating cart (mobile/tablet) - Selalu bisa dibuka agar kasir bisa melihat pembayaran kapan saja -->
+        <!-- Tombol Pop-up Keranjang (Layar HP / Tablet < lg) - Selalu tampil agar kasir bisa buka pop-up kapan saja -->
         <button
             type="button"
-            class="fixed right-4 bottom-20 z-40 flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold shadow-xl xl:hidden active-press tabular-nums transition"
+            class="fixed right-4 bottom-20 z-40 flex items-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold shadow-xl lg:hidden active-press tabular-nums transition cursor-pointer"
             :class="
                 cart.count > 0
-                    ? 'bg-blue-700 text-white hover:bg-blue-800'
-                    : 'bg-slate-900/90 text-white hover:bg-slate-900 border border-slate-700 backdrop-blur-sm'
+                    ? 'bg-blue-700 text-white hover:bg-blue-800 ring-4 ring-blue-700/20'
+                    : 'bg-slate-900/95 text-white hover:bg-slate-900 border border-slate-700 backdrop-blur-md shadow-2xl'
             "
             @click="cartOpen = true"
         >
             <ShoppingCart class="h-5 w-5" />
             <span v-if="cart.count > 0">{{ cart.count }} item · {{ rupiah(cart.total) }}</span>
-            <span v-else>Lihat Pembayaran (0)</span>
+            <span v-else>Keranjang & Bayar (0)</span>
         </button>
 
-        <!-- Bottom sheet keranjang -->
+        <!-- Pop-up Bottom Sheet Keranjang Mobile -->
         <Teleport to="body">
             <div
-                class="fixed inset-0 z-50 xl:hidden pointer-events-none"
+                class="fixed inset-0 z-50 lg:hidden pointer-events-none"
                 :class="{ 'pointer-events-auto': cartOpen }"
             >
-                <!-- Backdrop with smooth blur and fade (stays blurred until closed) -->
+                <!-- Backdrop with smooth blur and fade -->
                 <Transition
                     enter-active-class="backdrop-enter-active"
                     enter-from-class="backdrop-enter-from"
@@ -497,7 +498,7 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                     />
                 </Transition>
 
-                <!-- Bottom Sheet -->
+                <!-- Pop-up Bottom Sheet Modal -->
                 <Transition
                     enter-active-class="sheet-slide-enter"
                     enter-from-class="translate-y-full"
@@ -508,13 +509,13 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                 >
                     <div
                         v-if="cartOpen"
-                        class="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-3xl bg-slate-100 p-3 shadow-2xl dark:bg-slate-900 dark:text-slate-100 border-t border-transparent dark:border-slate-800 pointer-events-auto"
+                        class="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-3xl bg-slate-100 p-3 shadow-2xl dark:bg-slate-900 dark:text-slate-100 border-t border-slate-200 dark:border-slate-800 pointer-events-auto"
                     >
                         <!-- Drag handle bar -->
                         <div class="mx-auto mb-2.5 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
 
                         <div class="mb-2 flex items-center justify-between px-1">
-                            <p class="text-sm font-bold text-slate-800 dark:text-white">Keranjang Belanja</p>
+                            <p class="text-sm font-bold text-slate-800 dark:text-white">Keranjang & Pembayaran</p>
                             <button
                                 type="button"
                                 class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 active-press dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
@@ -525,7 +526,7 @@ watch([() => pos.idSekolah, idKelompok], () => void cari());
                         </div>
                         <CartPanel
                             :bayar-loading="bayarLoading"
-                            @bayar="bayar"
+                            @bayar="(payload) => { cartOpen = false; bayar(payload); }"
                             @hold="openHold"
                             @show-held="heldModalOpen = true"
                         />

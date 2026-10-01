@@ -3,6 +3,7 @@ import { Clock, Maximize2, Minus, PauseCircle, Plus, QrCode, Trash2 } from '@luc
 import { computed, ref, watch } from 'vue';
 import { rupiah } from '@/lib/format';
 import { useCartStore } from '@/stores/cart';
+import { usePosStore } from '@/stores/pos';
 import Modal from '@/components/pos/Modal.vue';
 import qrisAsset from '@/assets/qris.jpg';
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
     (e: 'show-held'): void;
 }>();
 
+const pos = usePosStore();
 const cart = useCartStore();
 const nominal = ref<number>(0);
 const cara = ref('tunai');

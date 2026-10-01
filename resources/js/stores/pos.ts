@@ -31,8 +31,8 @@ export const usePosStore = defineStore('pos', () => {
     const lastUserId = ref(0);
     const lastCatalogSekolah = ref(0);
 
-    const isSuper = computed(() => me.value?.role?.nama_role === 'super admin');
-    const isDev = computed(() => me.value?.role?.nama_role === 'developer');
+    const isSuper = computed(() => (me.value?.role?.nama_role ?? '').toLowerCase().trim() === 'super admin');
+    const isDev = computed(() => (me.value?.role?.nama_role ?? '').toLowerCase().trim() === 'developer');
     const isDemo = computed(
         () =>
             me.value?.role?.nama_role === 'demo' ||

@@ -166,7 +166,11 @@ onMounted(() => {
         <PageHeader
             title="Pengaturan"
             :icon="Settings"
-            subtitle="Preferensi aplikasi, tema tampilan, konfigurasi QRIS kasir, dan informasi akun aktif"
+            :subtitle="
+                !pos.isDev
+                    ? 'Preferensi aplikasi, tema tampilan, konfigurasi QRIS kasir, dan informasi akun aktif'
+                    : 'Preferensi aplikasi, tema tampilan, dan informasi akun aktif'
+            "
         />
 
         <!-- Tema Tampilan Card -->
@@ -207,9 +211,9 @@ onMounted(() => {
             </Link>
         </div>
 
-        <!-- Konfigurasi QRIS Pembayaran Kasir (Super Admin & Developer) -->
+        <!-- Konfigurasi QRIS Pembayaran Kasir (Hanya untuk Super Admin, disembunyikan untuk Developer) -->
         <div
-            v-if="pos.can('pengaturan')"
+            v-if="pos.can('pengaturan') && !pos.isDev"
             class="mb-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900 shadow-2xs"
         >
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800/80">
